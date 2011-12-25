@@ -196,7 +196,7 @@ pre-process the tokens extracted from the man pages to support some of the very
 basic natural language processing functionalities. In this implementation the
 Porter stemming algorithm [5] has been used to
 reduce the individual tokens extracted from the man pages to their root words.
-This allows us to support more flexible searches. For example both
+This enables support for more flexible searches. For example both
 \textit{``Installing new packages''} and \textit{``install new package''} will
 return same results.
 
@@ -208,21 +208,22 @@ In this implementation, both word stemming and spelling correction in our implem
 \end{description}
 \begin{description}
 \item[Bookkeeping of man page metadata] \hfill \\
-In this implementation we have gone ahead and also indexed additional metadata
-related to the man pages, for example we are indexing an md5 hash of the man
-page, the device id, inode number and modification time of the man page file so
-as to support incremental updating of the index as new man pages are installed
-or the old ones are modified/updated.
+In this implementation additional metadata related to the man pages, for example
+an md5 hash, the device id, inode number and modification time
+of the man page file etc. are indexed and stored so
+as to support fast and hassle free updating of the index as new man pages are
+installed or the old ones are modified/updated.
 
-Similarly we are also maintaining a separate index of all the aliases of a man
-page. This will allow us to get rid of all the hard or symbolic links of the man
-pages which are scattered throughout the filesystem, and also help in getting rid
-of the MKLINK flags in the makefiles.
+Similarly a separate index of all the man page aliases is stored and maintained.
+This provides an option to get rid of all the hard or symbolic links of the man
+pages scattered throughout the filesystem, and also for clean up of the MLINKS
+mess in the makefiles.
 \end{description}
 \subsection{Tools Used}
-The two main tasks that we needed to perform were parsing of the man pages and
-building an index of the data, and to do these tasks we have used \textit{libmandoc} [6]
-and \textit{sqlite} [7] in our implementation.
+The two main tasks that are needed to be performed are parsing of the man pages
+and building an index of the data. \textit{libmandoc} [6]
+and \textit{sqlite} [7] have been used for the two tasks respectively in this
+implementation.
 \begin{description}
 \item[\textit{libmandoc}] \hfill \\
 \textit{libmandoc} is a library interface to a validating compiler. It provides
@@ -234,50 +235,51 @@ which are of our interest.
 \item[\textit{sqlite}] \hfill \\
 \textit{sqlite} is an embedded relational database management system providing a
 relatively small and easy to use C library interface. One of the main reason
-for choosing it over the myriad of other possible options was that it provides
+for choosing it over the myriad of other possible options is that it provides
 in built support for full text search through it's FTS virtual table module [8].
 The FTS module can be accessed using pretty much standard SQL syntax, and it is
-still flexible enough to allow us to implement our own ranking function as
-per our needs. Besides that we have been able to utilize the RDBMS support of
-\textit{Sqlite} to store additional metadata in the form of normal database
-tables without any hassles.
+still flexible enough to accept user supplied ranking function to suit the needs
+of the application. Besides that another advantage of \textit{sqlite} is the
+RDBMS support which makes it very easy to store additional metadata in the form
+of normal database tables without any hassles.
 \end{description}
 \section{Implementation Details}
-Due to space constraints we cannot go into enough implementation details in this
-abstract but we would like to talk a bit about some important components of this
-project:
+Due to space constraints it is not possibile to go into enough implementation details but in this section some important components of this project are
+discussed in brief.
 \begin{description}
-\item[makemandb(1)] \hfill \\
-\textit{makemandb(1)} [9] is the key component of this implementation. It
-traverses the filesystem, reads the raw man page source files, feeds them to them
-\textit{libmandoc} and then stores the extracted data in the database using
-\textit{sqlite}.
+\item[makemandb] \hfill \\
+\textit{makemandb} [9] is the key component of this implementation. It is a
+command line tool which
+traverses the filesystem, reads the raw man page source files, feeds them to the
+\textit{libmandoc} parser and then stores the extracted data in the database
+using \textit{sqlite}.
 \end{description}
 \begin{description}
-\item[apropos(1)] \hfill \\
-This is the version of \textit{apropos(1)} written from scratch utilizing the
+\item[apropos] \hfill \\
+This is the version of \textit{apropos} written from scratch utilizing the
 full text search functionality of \textit{sqlite}. Unlike the classical version
-of \textit{apropos(1)} it only displays the top 10 results relevant to the user
-query and most of the times this is sufficient as we shall see later. Also, it
+of \textit{apropos}, it only displays the top 10 results relevant to the user
+query and most of the times this is sufficient as will be seen later. Also, it
 shows a brief snippet for each of the search results, making it more easy to
-find out the relevant documents.
+identify the relevant documents.
 \end{description}
 \begin{description}
-\item[apropos-utils(3)] \hfill \\
-\textit{apropos-utils(3)} [10] is a small library interface provided with this
-implementation.
-It provides functions for querying the FTS index and processing the results in
-a user supplied callback function. It's main purpose is to develop different
-interfaces on top of this implementation for different use cases. For example we
-have built a small CGI application using it for doing the searches from a web
-browser, similarly we also built an IRC bot using this 
+\item[apropos-utils] \hfill \\
+\textit{apropos-utils} [10] is a small library interface provided with this
+implementation. It provides functions for querying the FTS index and for
+processing the results in a user supplied callback function. It's main purpose
+is to develop different interfaces on top of this implementation for different
+use cases. For example a small CGI application was built using it for doing
+the searches from a web browser, similarly an IRC bot was also developed utilizing this interface.
 \end{description}
 \section{Results}
-We would like to show how our implementation solves the problems cited earlier
-with the classical version of \textit{apropos(1)}.
+This section shows results of some of the sample queries on the version of
+developed as part of this project
+\textit{apropos} to demonstrate how it solves many of the problems cited earlier
+with the classical version of \textit{apropos}.
 \footnote{Although this implementation of \textit{apropos(1)} returns 10 results
-in normal case for a query but in the following listings we have snipped the
-results to save space
+in normal case for a query but in the following listings the output has been
+snipped to save space
 }
 \lstset{language = sh, caption={Add new user},}
 \begin{lstlisting}
@@ -328,31 +330,26 @@ quota of inodes on the file system on which the directory is being
 created has been exhausted. EIO An I/O error occurred while making the
 directory entry or...
 \end{lstlisting}
-\lstset{language = sh, caption={get process status},}
+\lstset{language = sh, caption={signal number to string},}
 \begin{lstlisting}
-$ apropos ``get process status''
-ps(1)   process status
-process status
+$ apropos ``signal number to string''
+psignal(3)      system signal messages
+...the signal number is not recognized sigaction(2) , the string
+Unknown signal is produced. The psiginfo function produces the same
+output as the psignal function, only it uses the signal number
+information from the si argument. The message strings can...
 
-netstat(1)      show network status
-...use the fstat(1) command to find out which process or processes
-hold references to a socket. The interface display...show network
-status
+intro(2)        introduction to system calls and error numbers
+...undefined signal to a signal(3) or kill(2) function). 23 ENFILE Too
+many open files in system . Maximum number...shell. Pathname A path
+name is a NUL -terminated character string starting with an optional
+slash \&/ , followed by zero or...
 
-bounce(8)       Postfix delivery status reports
-...the master(8) process manager.  The bounce(8) daemon
-processes two types of service requests: Append a recipient
-(non-)delivery status record to a per message log file. Enqueue a
-delivery status notification message, with a...
-
-ocsp(1) Online Certificate Status Protocol utility
-Online Certificate Status Protocol utility...it is in client mode. The
-request(s) the responder processes can be either specified on the
-command line (using...
-
-fstat(1)        display status of open files
-...the owner of the process (effective UID). CMD The command name of
-the process. PID The process ID. FD The...display status of open files
+groff_mdoc(7)   reference for groff's mdoc implementation
+...Qq .Qq string ) , string ) , .Qq string Ns ), string ), .Sq .Sq
+string string .Em or...UNTITLED is used. The section number may be a
+number in the range 1...2, 3 and 9 error \&.\e"     and signal
+handling only. \&.\e" .Sh ERRORS \&.\e...
 \end{lstlisting}
 
 \begin{figure}[htp]
@@ -367,7 +364,7 @@ There are at least two projects which are related to this in some way.
 \textit{man-db} [11] is a complete implementation of the man page documentation
 system and it is used on a number of GNU/Linux distributions.\textit{man-db}
 takes an interesting approach for indexing the man page data. Unlike the
-classical \textit{apropos(1)}, it uses a Berkley DB database but still it's index
+classical \textit{apropos}, it uses a Berkley DB database but still it's index
 is limited to the NAME section only. It adds an option `K' to man(1) to allow a
 crude full text search but it is not very efficient nor effective.
 \end{description}
@@ -376,40 +373,40 @@ crude full text search but it is not very efficient nor effective.
 \textit{mandocdb} [12] is more in line with the goals of our project but it takes
 a novel approach. It indexes the keywords extracted from the man pages in a
 key-value store using btree(3) [13]. It also comes with it's own implementation
-of \textit{apropos(1)} which performs search using this key-value store. The
+of \textit{apropos} which performs search using this key-value store. The
 main key point of this implementation is that it exploits the semantic structure
 of the man pages. 
 \end{description}
 \section{Future Work}
 \begin{description}
 \item[Work on Ranking Algorithm] \hfill \\
-We have used a ranking algorithm based on probabilistic model [14] of information
-retrieval. It is essentially based on the Okapi BM25F algorithm [15] and uses
-certain parameters whose values are usually dependent on the corpus and the
-search application. For example we have used certain weights for different
-sections of man pages. At the moment these values have been determined manually
-but we would like to use some machine learning techniques in the coming days to
-automate this.
+A ranking algorithm based on probabilistic model [14] of information
+retrieval has been implemented to filter out the most relevant results and show
+them at the top. It is essentially based on the Okapi BM25F algorithm [15] and
+uses certain parameters whose values are usually dependent on the corpus and the
+search application. For example certain weight parameters are assigned to different sections of man pages. At the moment these values have been determined
+manually but one goal is to use some machine learning techniques in the coming
+days to automate this.
 \end{description}
 \begin{description}
 \item[Fix Some Loose Ends In Parsing of man pages] \hfill \\
 Although the parsing routine is working fine for most purposes on the man pages
-supplied with NetBSD and also on most of the man pages found in pkgsrc. But there
+supplied with NetBSD and also on most of the man pages found in Pkgsrc. But there
 are perhaps a few corner cases still to be fixed. Besides that another issue that
 is to be addressed is the parsing of the escape sequences which are used
-extensively in the \textit{man(7)} [16] based man pages. We would like to address
-these issues in the coming days.
+extensively in the \textit{man(7)} [16] based man pages. These issues are to be
+addressed in the coming days.
 \end{description}
 \section{Acknowledgement}
-This project was developed as part of \textbf{Google Summer of Code 2011} [17],
-so thanks to Google for sponsoring it. We would also like to thank
+This project has been developed as part of \textbf{Google Summer of Code 2011}
+[17], so thanks to \textbf{Google} for sponsoring it. Special thanks to
 \textbf{Kristaps Dzonsons} who is the developer of the \textit{mdocml} [18]
 project, he also helped by pointing out several issues in the parsing related
-code. We would also like to thank \textbf{David Young} who was involved with
-this project closely and offered useful help and guidance. A special thanks goes
-to \textbf{Thomas Klausner} who helped in writing and reviewing our man pages.
-Thanks to Petra Zeidler for administering the GSoC program for \textit{The NetBSD
-Foundation}.
+code. We would like to thank \textbf{David Young} who was involved with
+this project closely and offered useful help and guidance throughout. A special
+thanks goes to \textbf{Thomas Klausner} who helped in writing and reviewing our
+man pages. Thanks to \textbf{Petra Zeidler} for administering the GSoC program
+for \textit{The NetBSD Foundation}.
 \begin{thebibliography}{20}
 \bibitem{1}
 \emph{NetBSD manual page for apropos(1)}
