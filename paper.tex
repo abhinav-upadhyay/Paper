@@ -50,7 +50,7 @@ indexing the keywords in the NAME section of the man pages in a plain text file
 (whatis.db) [2]
 and performing searches on it. The reason for this simple design was most
 probably lack of computing resources in the early days. The plain text file
-consisting of keywords would hardly take few hundreds of kilo bytes of disk space
+consisting of keywords hardly takes few hundreds of kilo bytes of disk space
 and performing search on a plain text file is also not very hard.
 
 This simplified design of \textit{apropos(1)} resulted in limited utility and
@@ -59,10 +59,9 @@ usability.The searches are limited to the keywords in the NAME section of the
 only a user knows the exact keywords he gets the right results otherwise most of
 the times the searches are full of bogus results or a dead end. In the modern
 computing world where hard problems like searching the World Wide Web have been
-solved [3] to sufficient degree where most of the data is unstructured, then it
-makes perfect sense that we leverage the advancement in technology to solve the
-problem of an effective man page search tool, considering the fact that the man
-pages consist of structured data.
+solved [3] to sufficient degree, then it makes perfect sense that we leverage the advancement in technology to solve the problem of an effective man page
+search tool, considering the fact that the man
+pages consist of structured data, making the problem somewhat less complex.
 
 In present times the machines are powerful and  capable of running the search
 algorithms efficiently. Disk
@@ -79,22 +78,22 @@ analyzed.
 The conventional \textit{apropos} is limited to the keywords used in the NAME
 section
 of the man pages. If the user specifies keywords relevant to the page which he
-is looking but probably those keywords are not used in it's NAME section,
-then \textit{apropos(1)} would not return
+is looking but probably those keywords are not used in the NAME section,
+then \textit{apropos} would not return
 anything relevant. So in essence the user cannot use free form queries like
 those supported by modern search applications.
 \lstset{language = sh, caption={No results for free form queries}}
 \begin{lstlisting}
-$ apropos(1) ``add new user''
+$ apropos ``add new user''
 add new user: nothing appropriate
 
-$ apropos(1) ``get process status''
+$ apropos ``get process status''
 get process status: nothing appropriate
 
-$ apropos(1) ``termcap database''
+$ apropos ``termcap database''
 termcap database: nothing appropriate
 
-$ apropos(1) ``signal number to string''
+$ apropos ``signal number to string''
 signal number to string: nothing appropriate
 \end{lstlisting}
 
@@ -173,7 +172,8 @@ simplistic implementation of \textit{apropos} does not leave any room for
 improvement.
 
 \section{Proposed Solution}
-A very simple and straightforward solution is proposed to solve these problems.
+A very simple and straightforward solution is proposed to solve these problems as
+part of this project.
 The idea is to parse and index
 the complete content (or at least most of the content) in the form of an
 inverted index [4] and use it to build a full text search
@@ -210,8 +210,8 @@ In this implementation, both word stemming and spelling correction in our implem
 \item[Bookkeeping of man page metadata] \hfill \\
 In this implementation additional metadata related to the man pages, for example
 an md5 hash, the device id, inode number and modification time
-of the man page file etc. are indexed and stored so
-as to support fast and hassle free updating of the index as new man pages are
+of the man page files are indexed and stored so
+as to support fast and hassle free update of the index as new man pages are
 installed or the old ones are modified/updated.
 
 Similarly a separate index of all the man page aliases is stored and maintained.
@@ -220,7 +220,8 @@ pages scattered throughout the filesystem, and also for clean up of the MLINKS
 mess in the makefiles.
 \end{description}
 \subsection{Tools Used}
-The two main tasks that are needed to be performed are parsing of the man pages
+The two main tasks that are needed to be performed to implement this project are
+parsing of the man pages
 and building an index of the data. \textit{libmandoc} [6]
 and \textit{sqlite} [7] have been used for the two tasks respectively in this
 implementation.
