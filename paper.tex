@@ -37,11 +37,18 @@ Traditionally, \textit{apropos} [1] has been there to act as a search
 interface but to a large extent it hasn't really lived up to it's expectation.
 \textit{apropos} was
 developed in the early days of Unix when computing resources were scarce and
-that is the primary reason for its minimalistic and simple design.
+that is the primary reason for its minimalistic and simple design. The biggest
+limitation of \textit{apropos} is it's limited search capabilities besides
+man others.
 
-In this paper, the limitations of the traditional implementation of
-\textit{apropos} are discussed along with brief details of how these were overcome as part of this project.
-Additionally, we compare and contrast our approach with other modern implementations available out there.
+We worked on fixing this by writing a new implementation of \textit{apropos} As part of \emph{Google Summer of Code 2011} [17]. The main goal of this project was
+the development of a full text search tool for man pages.
+
+
+In this paper, the limitations of the traditional implementation of apropos
+are discussed along with brief details of how these were overcome as part of
+this project. Additionally, we compare and contrast our approach with other
+modern implementations available out there.
 
 \section{Introduction}
 The classical version of \textit{apropos} has been implemented by simply
