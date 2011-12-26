@@ -28,22 +28,21 @@ Joerg Sonnenberger $<$joerg@NetBSD.org$>$}
 \section{Abstract}
 Unix like operating systems have withstood the test of time for 40 odd years for
 several technical and philosophical reasons. One of those reasons is the
-quality documentation they ship in the form of man pages. They are a single point
-source of consultation for most of our routine work. But there has been a lack of
-good search tool to accompany this documentation which would increase their
+quality documentation they ship in the form of man pages, which are a single
+source of consultation for most of our routine work. However, so far, there has been a lack of
+good search tool to accompany this documentation, which would increase their
 usefulness manifolds.
 
-Traditionally \textit{apropos} [1] has been there to act as a search
+Traditionally, \textit{apropos} [1] has been there to act as a search
 interface but to a large extent it hasn't really lived up to it's expectation.
 \textit{apropos} was
 developed in the early days of Unix when computing resources were scarce and
-which is the primary reason that it's design was kept so
-minimal and simple.
+that is the primary reason for its minimalistic and simple design.
 
-In this paper the limitations of the traditional implementation of
-\textit{apropos} are discussed along with brief details of how those limitations
-have been solved in the implementation developed as part of this project and also
-what other modern implementations are available out there.
+In this paper, the limitations of the traditional implementation of
+\textit{apropos} are discussed along with brief details of how these were overcome as part of this.
+Additionally, we compare and contrast our approach with other modern implementations available out there.
+
 \section{Introduction}
 The classical version of \textit{apropos} has been implemented by simply
 indexing the keywords in the NAME section of the man pages in a plain text file
@@ -51,21 +50,21 @@ indexing the keywords in the NAME section of the man pages in a plain text file
 and performing searches on it. The reason for this simple design was most
 probably lack of computing resources in the early days. The plain text file
 consisting of keywords hardly takes few hundreds of kilo bytes of disk space
-and performing search on a plain text file is also not very hard.
+and performing search on a plain text file is quite easy.
 
 This simplified design of \textit{apropos(1)} resulted in limited utility and
-usability.The searches are limited to the keywords in the NAME section of the
- keywords. If
-only a user knows the exact keywords he gets the right results otherwise most of
-the times the searches are full of bogus results or a dead end. In the modern
+usability as the searches are limited to the keywords in the NAME section of the
+ keywords. Only if
+a user knows the exact keywords do they get the appropriate results; otherwise most of
+the times the searches are full of irrelavant results or possibly a dead end. In the modern
 computing world where hard problems like searching the World Wide Web have been
-solved [3] to sufficient degree, then it makes perfect sense that we leverage the advancement in technology to solve the problem of an effective man page
-search tool, considering the fact that the man
+solved [3] to a sufficient degree, it makes perfect sense to leverage the advancement in technology 
+in order to solve the problem. This problem is made even simpler considering that the man
 pages consist of structured data, making the problem somewhat less complex.
 
-In present times the machines are powerful and  capable of running the search
+In present times, the machines are powerful and  capable of running the search
 algorithms efficiently. Disk
-space is also cheap enough that indexing of additional metadata from man pages
+space is also sufficiently cheap that any extra space incurred by indexing of additional metadata from man pages
 can be easily afforded. These are necessary prerequisites for building an
 effective search tool.
 
@@ -78,9 +77,9 @@ analyzed.
 The conventional \textit{apropos} is limited to the keywords used in the NAME
 section
 of the man pages. If the user specifies keywords relevant to the page which he
-is looking but probably those keywords are not used in the NAME section,
+is looking but if those keywords are not used in the NAME section,
 then \textit{apropos} would not return
-anything relevant. So in essence the user cannot use free form queries like
+anything relevant. So, in essence, the user cannot use free form queries like
 those supported by modern search applications.
 \lstset{language = sh, caption={No results for free form queries}}
 \begin{lstlisting}
@@ -101,8 +100,8 @@ signal number to string: nothing appropriate
 Another major limitation of the classical version of \textit{apropos} is that
 it has no
 natural language support. For example in the following listing it can be seen
-that while \textit{apropos} returns the correct result for the query \textit{``make directories''} but it fails when the keyword \textit{``directory''} is
-used in place of \textit{``directories''}, although the two words are based on
+that while \textit{apropos} returns the correct result for the query \textit{``make directories''}, it fails when the keyword \textit{``directory''} is
+used in place of \textit{``directories''} even though the two words are based on
 same root word.
 \lstset{language = sh, caption={No support for stems or word with same roots},}
 \begin{lstlisting}
@@ -129,8 +128,8 @@ coppy strings: nothing appropriate
 
 \subsection{Unintelligible Output}
 Because of the way \textit{apropos} works, sometimes it's output can be
-unintelligible and it can be very hard for the user to identify the results which
-are relevant to him.
+unintelligible and it can be very hard for the user to identify relevant results.
+
 \lstset{language = sh, caption={Unintelligible output of \textit{apropos(1)}},}
 \begin{lstlisting}
 $ \textit{apropos(1)} power
@@ -185,15 +184,15 @@ before and discussed as follows:
 \item[Free Form Queries] \hfill \\
 The users can express their queries in more natural language form as the searches
 are no longer limited to the keywords defined in the NAME section of the man
-pages, the keywords used throughout the body of the page also play a role.
-For example queries like \textit{``installing new software package''}
-will now get results.
+pages as the keywords used throughout the body of the page also play a role.
+e.g. queries like \textit{``installing new software package''}
+will now produce relevant results.
 \end{description}
 \begin{description}
 \item[Basic Natural Language Processing Support] \hfill \\
 When parsing the man pages and building the index, it is also possible to
 pre-process the tokens extracted from the man pages to support some of the very
-basic natural language processing functionalities. In this implementation the
+basic natural language processing functionalities. In this implementation, the
 Porter stemming algorithm [5] has been used to
 reduce the individual tokens extracted from the man pages to their root words.
 This enables support for more flexible searches. For example both
@@ -222,14 +221,13 @@ mess in the makefiles.
 \subsection{Tools Used}
 The two main tasks that are needed to be performed to implement this project are
 parsing of the man pages
-and building an index of the data. \textit{libmandoc} [6]
-and \textit{sqlite} [7] have been used for the two tasks respectively in this
-implementation.
+and building an index from the data. We have used \textit{libmandoc} [6]
+and \textit{sqlite} [7] have for these the two tasks.
 \begin{description}
 \item[\textit{libmandoc}] \hfill \\
 \textit{libmandoc} is a library interface to a validating compiler. It provides
-interface to parse and build an AST (Abstract Syntax Tree) of the man page, 
-and interface for traversing that tree in order to extract the data from nodes
+interface to parse and build an AST (Abstract Syntax Tree) of the man page. It also provides
+an interface for traversing that tree in order to extract the data from nodes
 which are of our interest.
 \end{description}
 \begin{description}
@@ -245,8 +243,8 @@ RDBMS support which makes it very easy to store additional metadata in the form
 of normal database tables without any hassles.
 \end{description}
 \section{Implementation Details}
-Due to space constraints it is not possibile to go into enough implementation details but in this section some important components of this project are
-discussed in brief.
+Due to space constraints it is not possibile to go into enough implementation details, we discuss 
+the most important components of this project  in the section below:
 \begin{description}
 \item[makemandb] \hfill \\
 \textit{makemandb} [9] is the key component of this implementation. It is a
