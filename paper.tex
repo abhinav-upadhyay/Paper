@@ -19,7 +19,7 @@ breaklines=true,
 breakatwhitespace=false,
 title=\lstname
 }
-\title{Apropos Replacement \newline
+\title{Apropos Replacement: Development of a full text search tool for man pages \newline
 (Initial Outline)}
 \author{Abhinav Upadhyay $<$er.abhinav.upadhyay@gmail.com$>$ \and 
 Joerg Sonnenberger $<$joerg@NetBSD.org$>$}
@@ -40,7 +40,7 @@ developed in the early days of Unix when computing resources were scarce and
 that is the primary reason for its minimalistic and simple design.
 
 In this paper, the limitations of the traditional implementation of
-\textit{apropos} are discussed along with brief details of how these were overcome as part of this.
+\textit{apropos} are discussed along with brief details of how these were overcome as part of this project.
 Additionally, we compare and contrast our approach with other modern implementations available out there.
 
 \section{Introduction}
@@ -52,35 +52,34 @@ probably lack of computing resources in the early days. The plain text file
 consisting of keywords hardly takes few hundreds of kilo bytes of disk space
 and performing search on a plain text file is quite easy.
 
-This simplified design of \textit{apropos(1)} resulted in limited utility and
-usability as the searches are limited to the keywords in the NAME section of the
- keywords. Only if
-a user knows the exact keywords do they get the appropriate results; otherwise most of
-the times the searches are full of irrelavant results or possibly a dead end. In the modern
+This simplified design of \textit{apropos} resulted in limited utility and
+usability as the searches are limited to the keywords defined in the NAME
+section of the man pages. Only if a user knows the exact keywords do they get
+the appropriate results; otherwise most of
+the times the searches are full of irrelevant results or possibly a dead end. In the modern
 computing world where hard problems like searching the World Wide Web have been
-solved [3] to a sufficient degree, it makes perfect sense to leverage the advancement in technology 
-in order to solve the problem. This problem is made even simpler considering that the man
-pages consist of structured data, making the problem somewhat less complex.
+solved [3] to a sufficient degree, it makes perfect sense to leverage the
+advancement in technology in order to solve the problem. This problem is made
+even simpler considering that the man pages consist of structured data.
 
 In present times, the machines are powerful and  capable of running the search
 algorithms efficiently. Disk
-space is also sufficiently cheap that any extra space incurred by indexing of additional metadata from man pages
+space is also sufficiently cheap that any extra space incurred by indexing of
+additional metadata from man pages
 can be easily afforded. These are necessary prerequisites for building an
 effective search tool.
 
-\section{Limitations of Conventional \textit{apropos(1)}}
+\section{Limitations of Conventional \textit{apropos}}
 In this section results of some sample query searches from
 the classical version of \textit{apropos} are shown and their shortcomings are
 analyzed.
 
 \subsection{Lack of support for free form queries}
-The conventional \textit{apropos} is limited to the keywords used in the NAME
-section
-of the man pages. If the user specifies keywords relevant to the page which he
-is looking but if those keywords are not used in the NAME section,
-then \textit{apropos} would not return
-anything relevant. So, in essence, the user cannot use free form queries like
-those supported by modern search applications.
+As noted earlier the conventional \textit{apropos} is limited to the keywords
+used in the NAME section of the man pages. This means that the users do not have
+a whole lot of choice for specifying keywords in their queries. Besides they
+cannot search for keywords which are not usually specified in the title of a man
+page, for example a query like ``EINVAL'' would return no results.
 \lstset{language = sh, caption={No results for free form queries}}
 \begin{lstlisting}
 $ apropos ``add new user''
@@ -98,11 +97,13 @@ signal number to string: nothing appropriate
 
 \subsection{Lack of basic language support}
 Another major limitation of the classical version of \textit{apropos} is that
-it has no
-natural language support. For example in the following listing it can be seen
-that while \textit{apropos} returns the correct result for the query \textit{``make directories''}, it fails when the keyword \textit{``directory''} is
-used in place of \textit{``directories''} even though the two words are based on
-same root word.
+it is not smart enough to provide basic natural language processing constructs
+like stemming and spelling corrections.
+For example in the following listing it can be seen
+that while \textit{apropos} returns the correct result for the query
+\textit{``make directories''}, it fails when the keyword \textit{``directory''}
+is used in place of \textit{``directories''}, even though the two words are based
+on same root word.
 \lstset{language = sh, caption={No support for stems or word with same roots},}
 \begin{lstlisting}
 $ apropos ``make directories''
@@ -166,9 +167,8 @@ are stored on the filesystem in the from of hard (or soft) links and these
 have to be mentioned in the makefiles explicitly using the MLINKS mechanism. This
 approach works fine but it is a mess from maintenance point of view.
 It should be possible to fix this by utilizing the index already built and
-maintained by \textit{apropos} and related tools, but yet again, the
-simplistic implementation of \textit{apropos} does not leave any room for
-improvement.
+maintained by \textit{apropos}, but yet again, the simplistic implementation of
+\textit{apropos} does not leave any room for improvement.
 
 \section{Proposed Solution}
 A very simple and straightforward solution is proposed to solve these problems as
@@ -183,10 +183,9 @@ before and discussed as follows:
 \begin{description}
 \item[Free Form Queries] \hfill \\
 The users can express their queries in more natural language form as the searches
-are no longer limited to the keywords defined in the NAME section of the man
-pages as the keywords used throughout the body of the page also play a role.
-e.g. queries like \textit{``installing new software package''}
-will now produce relevant results.
+are no longer limited to the the NAME section.
+For example, queries like \textit{``installing new software package''}
+now produce relevant results.
 \end{description}
 \begin{description}
 \item[Basic Natural Language Processing Support] \hfill \\
@@ -200,14 +199,12 @@ This enables support for more flexible searches. For example both
 return same results.
 
 Similarly along with the inverted index, a dictionary of the keywords frequently
-occurring in the corpus of man pages can also be built and used to support
+occurring in the corpus of man pages is also built and used to support
 spelling suggestion.
-
-In this implementation, both word stemming and spelling correction in our implementation are used to make the search experience more smooth.
 \end{description}
 \begin{description}
 \item[Bookkeeping of man page metadata] \hfill \\
-In this implementation additional metadata related to the man pages, for example
+In this implementation, additional metadata related to the man pages, for example
 an md5 hash, the device id, inode number and modification time
 of the man page files are indexed and stored so
 as to support fast and hassle free update of the index as new man pages are
@@ -219,32 +216,33 @@ pages scattered throughout the filesystem, and also for clean up of the MLINKS
 mess in the makefiles.
 \end{description}
 \subsection{Tools Used}
-The two main tasks that are needed to be performed to implement this project are
-parsing of the man pages
-and building an index from the data. We have used \textit{libmandoc} [6]
-and \textit{sqlite} [7] have for these the two tasks.
+The two main operations that are critical for this project are parsing of the
+man pages and building of an index of the
+data obtained from the parsing process. \textit{libmandoc} [6]
+and \textit{sqlite} [7] have been used for executing these the two tasks.
 \begin{description}
 \item[\textit{libmandoc}] \hfill \\
 \textit{libmandoc} is a library interface to a validating compiler. It provides
-interface to parse and build an AST (Abstract Syntax Tree) of the man page. It also provides
-an interface for traversing that tree in order to extract the data from nodes
-which are of our interest.
+interface to parse and build an AST (Abstract Syntax Tree) of the man page. It
+also provides an interface for traversing that tree in order to extract the data
+from nodes which are of our interest.
 \end{description}
 \begin{description}
 \item[\textit{sqlite}] \hfill \\
 \textit{sqlite} is an embedded relational database management system providing a
-relatively small and easy to use C library interface. One of the main reason
+relatively small and easy to use C library interface. One of the main reasons
 for choosing it over the myriad of other possible options is that it provides
 in built support for full text search through it's FTS virtual table module [8].
 The FTS module can be accessed using pretty much standard SQL syntax, and it is
 still flexible enough to accept user supplied ranking function to suit the needs
-of the application. Besides that another advantage of \textit{sqlite} is the
-RDBMS support which makes it very easy to store additional metadata in the form
+of the application. Besides that, another advantage of \textit{sqlite} is the
+RDBMS support, which makes it very easy to store additional metadata in the form
 of normal database tables without any hassles.
 \end{description}
 \section{Implementation Details}
-Due to space constraints it is not possibile to go into enough implementation details, we discuss 
-the most important components of this project  in the section below:
+Due to space constraints it is not possible to go into enough implementation
+details, the most important components of this project are described in brief
+in this section.
 \begin{description}
 \item[makemandb] \hfill \\
 \textit{makemandb} [9] is the key component of this implementation. It is a
@@ -267,7 +265,7 @@ identify the relevant documents.
 \textit{apropos-utils} [10] is a small library interface provided with this
 implementation. It provides functions for querying the FTS index and for
 processing the results in a user supplied callback function. It's main purpose
-is to develop different interfaces on top of this implementation for different
+is to develop different interfaces on top of it for different
 use cases. For example a small CGI application was built using it for doing
 the searches from a web browser, similarly an IRC bot was also developed utilizing this interface.
 \end{description}
@@ -277,7 +275,7 @@ developed as part of this project
 \textit{apropos} to demonstrate how it solves many of the problems cited earlier
 with the classical version of \textit{apropos}.
 \footnote{Although this implementation of \textit{apropos(1)} returns 10 results
-in normal case for a query but in the following listings the output has been
+in normal cases for a query but in the following listings the output has been
 snipped to save space
 }
 \lstset{language = sh, caption={Add new user},}
@@ -369,12 +367,12 @@ crude full text search but it is not very efficient nor effective.
 \end{description}
 \begin{description}
 \item[mandocdb] \hfill \\
-\textit{mandocdb} [12] is more in line with the goals of our project but it takes
-a novel approach. It indexes the keywords extracted from the man pages in a
+\textit{mandocdb} [12] is more in line with the goals of this project but it
+takes a novel approach. It indexes the keywords extracted from the man pages in a
 key-value store using btree(3) [13]. It also comes with it's own implementation
 of \textit{apropos} which performs search using this key-value store. The
 main key point of this implementation is that it exploits the semantic structure
-of the man pages. 
+of the man pages.
 \end{description}
 \section{Future Work}
 \begin{description}
@@ -383,29 +381,31 @@ A ranking algorithm based on probabilistic model [14] of information
 retrieval has been implemented to filter out the most relevant results and show
 them at the top. It is essentially based on the Okapi BM25F algorithm [15] and
 uses certain parameters whose values are usually dependent on the corpus and the
-search application. For example certain weight parameters are assigned to different sections of man pages. At the moment these values have been determined
-manually but one goal is to use some machine learning techniques in the coming
-days to automate this.
+search application. For example certain weight parameters are assigned to
+different sections of man pages. At the moment these values have been determined
+manually but one goal is to use some supervised machine learning techniques in
+the order to automate this.
 \end{description}
 \begin{description}
 \item[Fix Some Loose Ends In Parsing of man pages] \hfill \\
 Although the parsing routine is working fine for most purposes on the man pages
 supplied with NetBSD and also on most of the man pages found in Pkgsrc. But there
-are perhaps a few corner cases still to be fixed. Besides that another issue that
+are perhaps a few corner cases still to be fixed. Besides that, another issue
+that
 is to be addressed is the parsing of the escape sequences which are used
 extensively in the \textit{man(7)} [16] based man pages. These issues are to be
 addressed in the coming days.
 \end{description}
 \section{Acknowledgement}
-This project has been developed as part of \textbf{Google Summer of Code 2011}
+This project has been developed as part of \emph{Google Summer of Code 2011}
 [17], so thanks to \textbf{Google} for sponsoring it. Special thanks to
 \textbf{Kristaps Dzonsons} who is the developer of the \textit{mdocml} [18]
 project, he also helped by pointing out several issues in the parsing related
 code. We would like to thank \textbf{David Young} who was involved with
 this project closely and offered useful help and guidance throughout. A special
-thanks goes to \textbf{Thomas Klausner} who helped in writing and reviewing our
-man pages. Thanks to \textbf{Petra Zeidler} for administering the GSoC program
-for \textit{The NetBSD Foundation}.
+thanks goes to \textbf{Thomas Klausner} who helped in writing and reviewing
+man pages for this project. Thanks to \textbf{Petra Zeidler} for administering
+the GSoC program for \textit{The NetBSD Foundation}.
 \begin{thebibliography}{20}
 \bibitem{1}
 \emph{NetBSD manual page for apropos(1)}
@@ -472,8 +472,8 @@ retrieval}
 The Computer Journal
 1992
 \bibitem{15}
-Zaragoza H.; Craswell N.; Taylor M.;
-Saria S.; Robertson S.
+Zaragoza, H.; Craswell, N.; Taylor, M.;
+Saria, S.; Robertson, S.
 \emph{Microsoft Cambridge at TREC–13: Web
 and HARD tracks}
 In proceedings of TREC-2004
