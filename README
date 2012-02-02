@@ -1,0 +1,12 @@
+A paper on the work I did during the Google Summer of Code 2011 for The NetBSD
+Foundation (http://NetBSD.org). I was mentored for this project by
+Joerg Sonnenberger.
+
+The paper discusses the shortcomings of the conventional version of apropos(1)
+which has been part of all the Unix implementations since it was first
+introduced in an early version of BSD and it has remained unchanged since then.
+
+It talks a bit about how modern tools and techniques can be used together to
+build a more usable search tool for man pages. In the end it compares and
+contrasts some of the other projects which have tried to tackle this problem
+in a different manner.
