@@ -2,11 +2,15 @@ A paper on the work I did during the Google Summer of Code 2011 for The NetBSD
 Foundation (http://NetBSD.org). I was mentored for this project by
 Joerg Sonnenberger.
 
-The paper discusses the shortcomings of the conventional version of apropos(1)
-which has been part of all the Unix implementations since it was first
-introduced in an early version of BSD and it has remained unchanged since then.
+The paper discusses the shortcomings of the conventional version of apropos(1),
+which is basically that it doesn't work well for the one task for which it was
+designed and that is search. Apropos has been part of all the modern Unix
+implementations since it was first introduced in an early version of BSD and it
+has probably remained unchanged in terms of its functionality.
 
-It talks a bit about how modern tools and techniques can be used together to
-build a more usable search tool for man pages. In the end it compares and
-contrasts some of the other projects which have tried to tackle this problem
-in a different manner.
+Then the paper talks a bit about how these problems were overcome during this
+project by leveraging the advancements in computing technology (better search
+algorithms, more powerful hardware, cheap disk storage, etc.) and availability
+of modern tools (mandoc, Sqlite), to develop a better search tool for man pages.
+In the end it compares and contrasts some of the other projects which have
+tried to tackle this problem in a different manner.
