@@ -4,7 +4,8 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{times}
-\usepackage{algpseudocode}
+\usepackage{algorithm}% http://ctan.org/pkg/algorithm
+\usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
 %\usepackage[pdftex]{graphicx}
 \lstset{ %
 language=sh,
@@ -544,7 +545,7 @@ document, but at the same time it will have a lower \textit{inverse document fre
 
 A lot of research has been done on \textit{tf-idf} weights based ranking
 algorithms and various techniques have been proposed over the years. According
-to a survey done by \textit{Salton} and \textit{Buckley} in 1988 [21], the
+to a survey done by \textit{Salton} and \textit{Buckley} in 1988 [20], the
 following ranking scheme was found to be most effective:
 
 \begin{center}
@@ -576,19 +577,19 @@ representing some of the most common sections found in man pages
 (see {\bf Listing 5}).
 
 At this point a fast yet sophisticated ranking algorithm was adopted.
-\emph{OKAPI BM25F} [15] is considered one of the most successful probabilistic
+\emph{Okapi BM25F} [15] is considered one of the most successful probabilistic
 models for information retrieval. \emph{Okapi BM25F} is based on \emph{tf-idf}
 scheme but it takes into account for the structure of the data. It allows for
 separate weights to be assigned for different parts of a structured document to
 come up with better relevance rankings. This scheme works very well for man pages
 because of their highly structured content. The algorithm is described in pseudo-code below. \textit{apropos} calls this function for each of the document
 obtained as part of the result set for the query and computes its relevancy
-weight. The documents are ranked in decreasing order or the weights returned
+weight. The documents are ranked in decreasing order of the weights returned
 from this function. \\
 
-In the following algorithm: \\
 {\tt
-\lstset{language = sh, caption={},}
+\lstset{language = sh, caption={Definition of important entities used in
+algorithm \ref{alg1}},}
 \begin{lstlisting}
 nhitcount =  Number of occurrences of
              phrase p in column c in
@@ -604,9 +605,12 @@ ndocshitcount = Number of documents in
                 once.
 \end{lstlisting}
 }
-
-
-\begin{algorithmic}
+\begin{algorithm}
+\caption{Compute Relevance Weight of a Document for a Given User Query}
+\label{alg1}
+\begin{algorithmic}[1]
+\Require{User query {\tt q}}
+\Require{Document {\tt d} whose weight needs to be computed}
 \State ${\tt tf} \gets 0.0$
 \State ${\tt idf} \gets 0.0$
 \State ${\tt k} \gets 3.5$
@@ -614,7 +618,7 @@ ndocshitcount = Number of documents in
 {k is an experimentally determined parameter}
 \State ${\tt doclen} \gets $ length of the current document
 \State ${\tt ndoc} \gets $ Total number of documents in the corpus
-\For {each phrase {\tt p} in the user query}
+\For{each phrase {\tt p} in {\tt q}}
 \For {each column {\tt c} in the FTS table}
 \State $w \gets $ weight for column {\tt c}
 \State $idf \gets idf + $ $log(\frac{ndoc}{ndocshitcount})\times w $
@@ -624,13 +628,14 @@ ndocshitcount = Number of documents in
 \State $score \gets $ $\frac{(tf \times idf)}{(k + tf)}$ \\
 \Return $score$
 \end{algorithmic}
-
+\end{algorithm}
 \end{description}
+
 \section{Results}
 This section shows results of some of the sample queries on new \textit{apropos}
 to demonstrate how it performs as compared to the traditional version.
-\endnote{Although this implementation of \textit{apropos} by default returns 10
-results for a query but in the following listings the output has been
+\endnote{Although the new \textit{apropos} by default returns 10
+results for a query but in the listings the output has been
 snipped to save space
 } \\
 
@@ -763,7 +768,7 @@ key-value store using btree(3) [13]. It also comes with its own implementation
 of \textit{apropos} which performs search using this key-value store. The
 main key point of this implementation is that it exploits the semantic structure
 but rather than indexing the complete content, it plucks out specific pieces of
-information from the man pages, for example Author names, function names,
+information from the man pages, for example author names, function names,
 header file names, etc.
 from the man pages. It is more sophisticated and much more useful than classic
 \textit{apropos}, but it is still essentially a keyword lookup based
@@ -775,14 +780,14 @@ implementation.
 \begin{description}
 \item[Work on Ranking Algorithm] \hfill \\
 The ranking algorithm is based on the probabilistic model of information
-retrieval [14]results. It
+retrieval [14]. It
 uses certain parameters whose values are usually dependent on the corpus and the
 search application. For example, certain weight parameters have been assigned to
 different sections of man pages, signifying how important the information in a
 particular section is as compared to the rest of the sections. At the moment
 these values have been determined
 manually but one goal is to use some supervised machine learning techniques in
-order to automate this so that more better search results can be obtained.
+order to automate this to improve the quality of search results further.
 \end{description}
 
 \begin{description}
@@ -840,11 +845,13 @@ Brin, S.; Page L.
 \emph{The Anatomy of a Large-Scale Hypertextual Web Search Engine}
 Computer Networks and ISDN Systems
 30:107-117, 1998
+
 \bibitem{4}
 Manning; Raghwan; Schutze
 \emph{Introduction to information retrieval},
 3-9,
 2008
+
 \bibitem{5}
 Porter, M. F.
 \emph{An algorithm for suffix stripping},
@@ -951,10 +958,12 @@ Jones, Sparck K.
 \emph {A statistical interpretation of term specificity and its application in retrieval.}
 Journal of Documentation
 Volume 28 Number 1 1972 pp. 11-21
-\newline
-{\tt
-http://mdocml.bsd.lv
-}
+
+\bibitem{20}
+Salton, Gerard; Buckley C.
+\emph {Term-Weighting Approaches in Automatic Text Retrieval.}
+Information Processing \& Management Vol. 24, No. 5, pp. 513-523,
+1988
 
 \end{thebibliography}
 
