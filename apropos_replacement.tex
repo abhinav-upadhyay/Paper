@@ -1,8 +1,11 @@
-\documentclass[titlepage, a4paper, 12pt]{article}
+
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{usenix,epsfig,endnotes}
 \usepackage{listings}
 \usepackage{color}
-\usepackage[pdftex]{graphicx}
-\usepackage{graphicx}
+\usepackage{times}
+\usepackage{algpseudocode}
+%\usepackage[pdftex]{graphicx}
 \lstset{ %
 language=sh,
 basicstyle=\footnotesize,
@@ -18,31 +21,49 @@ breaklines=true,
 breakatwhitespace=false,
 title=\lstname
 }
-\title{Apropos Replacement: Development of a full text search tool for man pages \newline
-(Initial Outline)}
-\author{Abhinav Upadhyay $<$er.abhinav.upadhyay@gmail.com$>$ \and 
-Joerg Sonnenberger $<$joerg@NetBSD.org$>$}
+
 \begin{document}
+
+%don't want date printed
+\date{}
+
+%make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+\title{\Large \bf Apropos Replacement : Development of a full text search tool for man pages}
+
+%for single author (just remove % characters)
+\author{
+{\rm Abhinav Upadhyay}\\
+$<$er.abhinav.upadhyay@gmail.com$>$
+\and
+{\rm Joerg Sonnenberger}\\
+$<$joerg@NetBSD.org$>$
+} % end author
+
 \maketitle
-\section{Abstract}
-Unix like operating systems have withstood the test of time for 40 odd years for
-several technical and philosophical reasons. One of those reasons is the
-quality documentation they ship in the form of man pages, which are a single
-source of consultation for most of our routine work. However, so far, there has been a lack of
-good search tool to accompany this documentation, which would increase their
-usefulness manifolds.
 
-Traditionally, \textit{apropos} [1] has been there to act as a search
-interface but to a large extent it hasn't really lived up to its expectation.
-\textit{apropos} was
-developed in the early days of Unix when computing resources were scarce and
-that is the primary reason for its minimalistic and simple design. The biggest
-limitation of \textit{apropos} is its limited search capabilities.
+% Use the following at camera-ready time to suppress page numbers.
+% Comment it out when you first submit the paper for review.
+\thispagestyle{empty}
 
-This paper discusses a new implementation of \textit{apropos} which was done
-as part of \emph{Google Summer of Code 2011} [17]. The goal of this project was
-to replace the conventional apropos in NetBSD with a modern version which
-supports full text searches.
+\subsection*{Abstract}
+Manual pages are a key component of Unix like operating systems, they have
+played a significant role in the success of Unix over the years. Man pages are
+the most authentic source of reference for of a system administrator or a
+programmer. However, so far, there has been a lack of good search tool to make
+man pages more accessible. \\
+
+Traditionally, \textit{apropos(1)} has been there as a search interface but it
+was developed in the early days of Unix when computing resources were scarce
+and that is the primary reason for its simple design and limited search
+capabilities. \\
+
+This paper discusses a new implementation of \textit{apropos} done by
+Abhinav Upadhyay as part of
+Google Summer of Code 2011. The goal of this project was to replace the
+conventional apropos in NetBSD with a modern version which supports full text
+searches. \\
+
+
 \section{Introduction}
 The classical version of \textit{apropos} has been implemented by simply
 indexing the keywords in the NAME section of the man pages in a plain text file
@@ -50,43 +71,43 @@ indexing the keywords in the NAME section of the man pages in a plain text file
 and performing searches on it. The reason for this simple design was most
 probably lack of computing resources in the early days. The plain text file
 consisting of keywords hardly takes few hundreds of kilo bytes of disk space
-and performing search on a plain text file is quite easy.
+and performing search on a plain text file is quite easy. \\
 
 This simplified design of \textit{apropos} resulted in limited utility and
 usability, as the searches are limited to the keywords defined in the NAME
-section of the man pages. Only if a user knows the exact keywords do they get
+section of the man pages. Only if the users know the exact keywords do they get
 the appropriate results; otherwise most of
 the times the searches are full of irrelevant results or possibly a dead end. 
 In the modern
 computing world where hard problems like searching the World Wide Web have been
 solved [3] to a sufficient degree, it makes perfect sense to leverage the
 advancement in technology in order to solve the problem. This problem is made
-even simpler considering that the man pages consist of structured data.
+even simpler considering that the man pages consist of structured data. \\
 
 In present times, the machines are powerful and  capable of running the search
 algorithms efficiently. Disk
 space is also sufficiently cheap that any extra space incurred by indexing of
 additional metadata from man pages
 can be easily afforded. These are necessary prerequisites for building an
-effective search tool.
+effective search tool. \\
 
 In this paper, the limitations of the traditional implementation of apropos
 are discussed along with brief details of how these were overcome as part of
-this project. Additionally, we compare and contrast our approach with other
-modern implementations available out there.
-
+this project. Additionally, a comparison of other modern implementations of apropos has been done. \\
 
 \section{Limitations of Conventional \textit{apropos}}
 In this section results of some sample query searches from
 the classical version of \textit{apropos} are shown and their shortcomings are
-analyzed.
+analyzed. \\
 
 \subsection{Lack of support for free form queries}
 As noted earlier the conventional \textit{apropos} is limited to the keywords
 used in the NAME section of the man pages. This means that the users do not have
 a whole lot of choice for specifying keywords in their queries. Besides they
 cannot search for keywords which are not usually specified in the title of a man
-page, for example a query like ``EINVAL'' would return no results.
+page, for example a query like ``EINVAL'' would return no results. \\
+
+{\tt \small
 \lstset{language = sh, caption={No results for free form queries}}
 \begin{lstlisting}
 $ apropos ``add new user''
@@ -97,10 +118,8 @@ get process status: nothing appropriate
 
 $ apropos ``termcap database''
 termcap database: nothing appropriate
-
-$ apropos ``signal number to string''
-signal number to string: nothing appropriate
 \end{lstlisting}
+}
 
 \subsection{Lack of basic language support}
 Another major limitation of the classical version of \textit{apropos} is that
@@ -110,34 +129,43 @@ For example in the following listing it can be seen
 that while \textit{apropos} returns the correct result for the query
 \textit{``make directories''}, it fails when the keyword \textit{``directory''}
 is used in place of \textit{``directories''}, even though the two words are based
-on same root word.
-\lstset{language = sh, caption={No support for stems or words with same roots},}
+on same root word. \\
+
+{\tt \small
+\lstset{language = sh, caption={No support for stems or words with same root},}
 \begin{lstlisting}
 $ apropos ``make directories''
 mkdir (1) - make directories
 $ apropos ``make directory''
 make directory: nothing appropriate
 
-$ apropos ``upgrading software package''
+$ apropos ``upgrading package''
 pkg_add (1) - a utility for installing and upgrading software package
 distributions
-$ apropos ``upgrading software packages''
-upgrading software packages: nothing appropriate
+
+$ apropos ``upgrading packages''
+upgrading packages: nothing appropriate
 \end{lstlisting}
+}
 
 Similarly, it is very common for users to misspell keywords in a query and \textit{apropos} has no support for it either.
+
+{\tt \small
 \lstset{language = sh, caption={No spelling correction},}
 \begin{lstlisting}
 $ apropos ``copy strings''
-stpcpy, stpncpy, strcpy, strncpy (3) - copy strings
+stpcpy, stpncpy, strcpy, strncpy (3) - copy
+strings
 $ apropos ``coppy strings''
 coppy strings: nothing appropriate
 \end{lstlisting}
+}
 
 \subsection{Unintelligible Output}
 Because of the way \textit{apropos} works, sometimes its output can be
-unintelligible and it can be very hard for the user to identify relevant results.
+unintelligible and it can be very hard for the user to identify relevant results. \\
 
+{\tt \small
 \lstset{language = sh, caption={Unintelligible output of \textit{apropos(1)}},}
 \begin{lstlisting}
 $ apropos power
@@ -165,31 +193,50 @@ Management Controller
 .
 .
 \end{lstlisting}
+}
+
 \subsection{Other Problems}
 Apart from the search related problems there are a few issues related to
 the way man pages are handled in NetBSD. The different aliases of the man pages
-are stored on the file system in the from of hard (or soft) links and these
-have to be mentioned in the makefiles explicitly using the MLINKS mechanism. This
+are stored on the file system in the from of hard (or symbolic) links and these
+have to be specified in the makefiles explicitly using the MLINKS mechanism. This
 approach works fine but it is a mess from maintenance point of view.
 It should be possible to fix this by utilizing the index already built and
 maintained by \textit{apropos}, but yet again, the simplistic implementation of
 \textit{apropos} does not leave any room for improvement.
 
-\section{Proposed Solution}
-A very simple and straightforward solution is proposed to solve these problems as
-part of this project.
-The idea is to parse and index
-the complete content (or at least most of the content) in the form of an
-inverted index [4] and use it to build a full text search
-interface. Having an index based on the complete content of the man pages solves
-many of the search
-related problems associated with the conventional \textit{apropos(1)} as noted
-before and discussed as follows:
+\section{Solution: A new apropos}
+This project proposes a very simple and straightforward solution to solve these
+problems and make man pages more usable. The idea is to exploit the inherent
+semantics and structure of the man pages. The \textit{mdoc(7)}
+macros are semantically quite rich, those macros combined with the context of the surrounding section or context in which they have been used, can be used
+as an indicator of the relevancy of the content. For example, the
+{\tt \small
+.Nm
+}
+macro when used inside of the
+{\tt \small
+NAME
+}
+section holds more significance than if used inside of any other section. Similarly the description of various \textit{errno} values in the
+\textit{intro(2)} man page has more important information than the mention of
+those \textit{errno} values in the
+{\tt \small
+RETURN VALUES
+}
+section of various man pages from section 3. In essence, it should be possible
+to parse and extract the structurally meaningful data
+out of man pages and index them in the form of an inverted index [4]. An
+inverted index is a specialized data structure for building search engines. The index combined with a ranking algorithm which exploits the structured nature of the data to give back more relevant results to the user, can be used to build a
+high quality search interface for manual pages.
+Such a search tool will solve many of the problems associated with the conventional \textit{apropos(1)} as noted
+before and discussed as follows: \\
+
 \begin{description}
 \item[Free Form Queries] \hfill \\
 The users can express their queries in more natural language form as the searches
 are no longer limited to the the NAME section.
-For example, queries like \textit{``installing new software package''} will
+For example, queries like \textit{``installing new software package''} may
 now produce relevant results.
 \end{description}
 \begin{description}
@@ -201,7 +248,7 @@ Porter stemming algorithm [5] has been used to
 reduce the individual tokens extracted from the man pages to their root words.
 This enables support for more flexible searches. For example both
 \textit{``Installing new packages''} and \textit{``install new package''} will
-return same results.
+return same results. \\
 
 Similarly along with the inverted index, a dictionary of the keywords frequently
 occurring in the corpus of man pages is also built and used to support
@@ -211,27 +258,31 @@ spelling suggestion.
 \item[Bookkeeping of man page metadata] \hfill \\
 In this implementation, additional metadata related to the man pages, for example
 an md5 hash, the device id, inode number and modification time
-of the man page files are indexed and stored so
-as to support fast and hassle free update of the index as new man pages are
-installed or the old ones are modified/updated.
+of the man page files are indexed and stored.
+This allows for very fast and hassle free update of the index as new man pages are installed or the old ones are updated. \\
 
 Similarly a separate index of all the man page aliases is stored and maintained.
 This provides an option to get rid of all the hard or symbolic links of the man
 pages scattered throughout the filesystem, and also for clean up of the MLINKS
 mess in the makefiles.
 \end{description}
+
 \subsection{Tools Used}
 The two main operations that are critical for this project are parsing of the
 man pages and building of an index of the
-data obtained from the parsing process. \textit{libmandoc} [6]
-and \textit{sqlite} [7] have been used for performing these the two tasks.
+data obtained from the parsing process. These are highly specific problems, and
+solving them from scratch would be a separate project in its own right, therefore this project tried to avoid reinventing the wheel and used existing
+tools and libraries which are battle tested and very successful. \textit{libmandoc} [6] from \textit{mdocml} [18] project has been used for parsing the man pages and \textit{sqlite} [7] for indexing and storing the parsed
+data on the file system.
+
 \begin{description}
 \item[\textit{libmandoc}] \hfill \\
-\textit{libmandoc} is a library interface to a validating compiler. It provides
+\textit{libmandoc} is a library interface to a validating compiler for man pages. It provides
 interface to parse and build an AST (Abstract Syntax Tree) of the man page. It
 also provides an interface for traversing that tree in order to extract the data
 from its nodes.
 \end{description}
+
 \begin{description}
 \item[\textit{sqlite}] \hfill \\
 \textit{sqlite} is an embedded relational database management system providing a
@@ -244,98 +295,453 @@ of the application. Besides that, another advantage of \textit{sqlite} is that,
 being an RDBMS, it makes it very easy to store additional metadata in the form
 of normal database tables without any hassles.
 \end{description}
+
 \section{Implementation Details}
 Due to space constraints it is not possible to go into enough implementation
 details, the most important components of this project are described in brief
 in this section.
+
+\subsection{makemandb}
+\textit{makemandb(8)} [9] is the key component of this implementation. It is a
+command line tool which traverses the filesystem, reads the raw man page source files, extracts the interesting data from them using the \textit{libmandoc} parser and then stores that data in an FTS table using \textit{sqlite}. \\
+
 \begin{description}
-\item[makemandb] \hfill \\
-\textit{makemandb} [9] is the key component of this implementation. It is a
-command line tool which
-traverses the filesystem, reads the raw man page source files, feeds them to the
-\textit{libmandoc} parser and then stores the extracted data in the database
-using \textit{sqlite}.
+\item[Operation of makemandb] \hfill \\
+\textit{makemandb} uses a two pass algorithm to index the man pages. In the first pass it obtains the list of directories containing man page files from
+\textit{man.conf} and starts traversing those directories. It obtains the
+\textit{\{dev\_t, ino\_t, mtime\}} of all the files using \textit{stat(2)}.
+A similar set of metadata is stored in the database (referring to the last successful indexing operation), \textit{makemandb} takes a difference (the set difference operation) of the two sets of metadata to obtain the list of man page files on the file system which are either newly installed (new \textit{\{dev\_t, ino\_t\}} pairs) or they have been updated (changed \textit{mtime}). \\
+
+In the second pass \textit{makemandb} generates md5 checksum of the files obtained from the previous stage and for each of these checksums, it checks in
+the db, whether this md5 checksum already exists in the db or not. If the md5 checksum is already present in the database, then this was just a false alarm and \textit{makemandb} does not need to parse the file, it simply updates the metadata of that file in the database. In case the md5 checksum of a file does not already exist in the database, then that means the file is either a newly installed man page or an older copy of a man page was updated,
+\textit{makemandb} feeds such man pages to the parser and extracts interesting
+data out of them, later on storing the data in the FTS table in the database.
 \end{description}
+
 \begin{description}
-\item[apropos] \hfill \\
-This is the version of \textit{apropos} written from scratch utilizing the
-full text search functionality of \textit{sqlite}. Unlike the classical version
-of \textit{apropos}, it only displays the top 10 results relevant to the user
-query and most of the times this is sufficient as will be seen later. Also, it
-shows a brief snippet of matching text for each of the search results, making it
-more easy to identify the relevant documents.
+\item[Database Schema] \hfill \\
+During the initial stage of the project, the structure of the database was kept
+simple. The FTS table consisted of 3 columns:
+{\tt
+name, name\_desc, desc
+}
+The
+{\tt
+name
+}
+and
+{\tt
+name\_desc
+}
+columns stored the name of the man page and the one line description from the
+{\tt
+NAME
+}
+section, while the
+{\tt
+desc
+}
+column stored the content from the rest of the sections. This approach worked
+quite well for a small set of man pages (for example the 4000 or so man pages in
+the base set of NetBSD). However, as the number of documents were increased (for example including man pages from pkgsrc), the quality of search started deteriorating. This was mainly because bulk of the parsed data was being stored
+in the same column in the database and the ranking algorithm had no way of
+identifying more relevant results apart from the number of matches in any page. \\
+
+To rectify this, first there was an attempt to try out better ranking schemes
+(the various ranking schemes that were tried out during the development of the
+project are discussed later). Better ranking schemes required storing precomputed
+term weights [19] on the file system, this almost doubled the storage requirements, therefore such ranking schemes were discarded later on, and the
+database schema was decomposed further into more columns. The decomposition into
+more columns was done to represent the most commonly occurring sections in usual Unix man pages, for example
+{\tt NAME, DESCRIPTION, LIBRARY, RETURN VALUES, EXIT STATUS, ERRORS}
+etc. Such a decomposition allowed for an elaborate ranking algorithm, which could
+assign different weights to each of these columns, based on their relevancy. The
+final schema of the database is shown in {\bf Listing 5}
 \end{description}
-\begin{description}
-\item[apropos-utils] \hfill \\
+
+\subsection{apropos}
+\textit{apropos} was written from scratch to use the FTS index created by
+\textit{makemandb}. Since, unlike the traditional \textit{apropos}, this version
+of \textit{apropos} is not limited to searching within only the {\tt NAME}
+section, the resulting
+number of search results is usually quite high, therefore new \textit{apropos}
+employs a
+sophisticated ranking algorithm to filter out the most relevant results and rank
+them up. To avoid cluttering the output and make the user interface clean, the
+new \textit{apropos} displays only the top 10 results by default with options
+to display more results if required. During the development and testing of the
+project it has been observed that, for a reasonable query, the top 10 results
+are most often sufficient. \\
+
+Another key aspect of any search application is to filter out or avoid stop-words
+. Words like \textit{``the'', ``a'', ``an'', ``'this''} etc. come under the
+category of stop-words, words which are \emph{very} commonly used in the
+language. Stop-words usually skew the search results because of their sheer
+frequency in the corpus. The usual practice in the information retrieval world
+is to filter such stop-words while building the index, however, in case of this
+project, it proved to be non-trivial within the given time constraints.
+Therefore it was decided that, rather than eliminating stop-words from the index,
+a reasonable trade off can be made by filtering out any stop-words from the
+user's search query and querying the database for only the keywords which do
+not come under the category of stop-words. \\
+
+{\tt \small
+\lstset{language = XML, caption={Database Schema},}
+\begin{lstlisting}
+The Database has three tables at present:
+
+(1) mandb:
+    The main FTS table which contains all
+    the content parsed from man pages
+
+  COLUMN NAME       DESCRIPTION
+  1. section        Section number
+  2. name           The name of the page  
+  3. name_desc      Short description from
+                    NAME section  
+  4. desc           Contains the content
+                    from DESCRIPTION
+                    section and any other
+                    section which is not
+                    stored in a separate
+                    column.
+  5. lib            The LIBRARY section
+  6. return_vals    RETURN VALUES section
+  7. env            ENVIRONMENT section
+  8. files          FILES section
+  9. exit_status    EXIT STATUS section
+  10. diagnostics   DIAGNOSTICS section
+  11. errors        ERRORS section
+  12. md5_hash      An md5 hash of the
+                    contents of the man
+                    page (UNIQUE).
+(2) mandb_meta:
+    This table maintains essential
+    metadata of all the indexed
+    man page files.
+
+  COLUMN NAME       DESCRIPTION
+  1. device         (dev_t)Logical device
+                    number from stat(2)
+  2. inode          (ino_t)Inode number
+                    from stat(2)
+  3. mtime          Last modification time
+                    from stat(2)
+  4. file           Absolute path name
+                    (UNIQUE constraint)
+  5. md5_hash       MD5 Hash of the man
+                    page
+  6. id             A unique integer ID
+                    referring to a page
+                    in mandb (PRIMARY KEY)
+
+(3) mandb_links:
+    This is an index of all the hard/soft
+    links of the man pages. The list of
+    the linked pages is usually obtained 
+    from the multiple .Nm entries in the
+    page.
+
+  COLUMN NAME       DESCRIPTION
+  1. link           The name of the hard/
+                    soft link (UNIQUE index) 
+  2. target         Name of the target
+                    page to which it
+                    points  
+  3. section        The section number  
+  4. machine        The machine
+                    architecture (if any)
+                    for which the page is
+                    relevant.
+\end{lstlisting}
+}
+
+\subsection{apropos-utils}
 \textit{apropos-utils} [10] is a small library interface provided with this
 implementation. It provides functions for querying the FTS index and for
 processing the results in a user supplied callback function. Its main purpose
 is to develop different interfaces on top of it for different
-use cases. For example a small CGI application was built using it for doing
+use cases. For instance a CGI front end has been built using it for doing
 the searches from a web browser, similarly an IRC bot was also developed utilizing this interface.
+
+\subsection{Ranking Algorithm}
+The ranking algorithm is the most interesting and most crucial component of
+any search application, it is the deciding factor of the usefulness of the
+application. This project took several stabs at coming up with a suitable ranking
+algorithm for \textit{apropos}.
+
+\begin{description}
+\item[1.] \hfill \\
+Initially the database schema was quite simple, it consisted of only three
+columns
+{\tt 
+name, name\_desc, desc
+}
+(as described previously). At this point, there weren't too many documents in
+the corpus, therefore nothing sophisticated was required. The basic intuition was
+that, a match found in the
+{\tt NAME} section of a man page has more weight as compared to a match found
+in any other section. This ranking scheme worked well for a small set of man
+pages in the corpus.
+\end{description}
+
+\begin{description}
+\item[2.] \hfill \\
+As more and more man pages were being added to the corpus for testing purposes,
+the quality of search results started to dilute. At this point of time, a
+completely new approach was adopted for ranking the results. In the literature
+related to information retrieval, \textit{tf-idf} [19] weights based ranking models are very common. The \textit{tf} in \textit{tf-idf} stands for \emph{Term Frequency} and \textit{idf} stands for \emph{Inverse Document Frequency}. \\
+
+{\bf Term Frequency}: Term frequency refers to the count of the number of times
+a given term
+{\tt \small
+t
+}
+appears in a given document
+{\tt \small
+d
+} \\
+
+{\bf Inverse Document Frequency:} The \textit{idf} of a term
+{\tt \small
+t
+}
+is the number of documents in which the term appears \textit{at least once}. \\
+
+Term frequency is a \textit{local} factor, it is concerned only with the number
+of occurrences of the search terms in one particular document at a time.
+While inverse document frequency is a \textit{global} factor, in the sense that,
+it indicates the discriminating power of a term. If a term appears in only a
+selected set of documents, then that term separates those set of
+documents from the rest. Therefore, ranking obtained by combining these two factors
+brings up more relevant documents.
+
+The weight of a term
+{\tt \small t} in document {\tt \small d} is calculated by the following
+formula:
+
+\begin{center}
+\framebox{\parbox[b]{2 in}{$weight  = tf \times idf$}}
+\end{center}
+Where \textit{tf} = Term frequency of term {\tt \small t} in document
+{\tt \small d} \\
+
+Inverse document frequency is calculated using the following formula:
+\begin{center}
+\framebox{\parbox[b]{2 in}{$idf = log (\frac{N}{N_t})$}}
+\end{center}
+Where $N$ = Total number of documents in the corpus \\
+$N_t$ = Number of documents in which term $t$ occurs (at least once). \\
+
+So for a term which appears in only one document it will have
+$idf = log(n)$,
+while a term which appears in all the documents, it will have
+$idf = log(1) = 0$
+
+For example a term like \textit{``the''} will have a high
+\textit{term frequency} in any
+document, but at the same time it will have a lower \textit{inverse document frequency} (almost close to $0$), which will nullify its effect on the quality of search results.
+
+A lot of research has been done on \textit{tf-idf} weights based ranking
+algorithms and various techniques have been proposed over the years. According
+to a survey done by \textit{Salton} and \textit{Buckley} in 1988 [21], the
+following ranking scheme was found to be most effective:
+
+\begin{center}
+\framebox{\parbox[b]{2 in}{$\frac{tf \cdot log(\frac{N}{N_t})}{\sqrt{\sum{(tf \cdot log(\frac{N}{N_t}))^2}}}$}}
+\end{center}
+
+The implementation of the above scheme proved to be \emph{very} slow. It required
+too many computations and all of these were required to be done for each
+search result separately to compute its relevance weight. In an state of the
+art search application, the index would usually store precomputed \textit{tf-idf}
+weights on the file system, in which case the overhead of computing weights of
+each individual search result would require very less work, leading to better
+performance. An attempt was made to compute the \textit{tf-idf} weights while
+indexing the man pages and store them in a separate table. This lead to high
+quality search results but it also brought up a serious issue. Storing
+precomputed weights on the file system, more than doubled the storage
+requirements of the database index. As a concrete example, it took close
+to $90 MB$ to index about $8000$ documents. Without the precomputed weights, 
+the database size requirement was close to $45 MB$ for the same number of pages.
+\end{description}
+
+\begin{description}
+\item[3.] \hfill \\
+Since the conventional \textit{apropos} required only a few hundred kilobytes of
+disk space, the disk space requirements of new \textit{apropos} seemed
+hyperbolic, therefore it was decided later on to look for alternative ranking
+schemes. At this point the database schema was decomposed into several columns
+representing some of the most common sections found in man pages
+(see {\bf Listing 5}).
+
+At this point a fast yet sophisticated ranking algorithm was adopted.
+\emph{OKAPI BM25F} [15] is considered one of the most successful probabilistic
+models for information retrieval. \emph{Okapi BM25F} is based on \emph{tf-idf}
+scheme but it takes into account for the structure of the data. It allows for
+separate weights to be assigned for different parts of a structured document to
+come up with better relevance rankings. This scheme works very well for man pages
+because of their highly structured content. The algorithm is described in pseudo-code below. \textit{apropos} calls this function for each of the document
+obtained as part of the result set for the query and computes its relevancy
+weight. The documents are ranked in decreasing order or the weights returned
+from this function. \\
+
+In the following algorithm: \\
+{\tt
+\lstset{language = sh, caption={},}
+\begin{lstlisting}
+nhitcount =  Number of occurrences of
+             phrase p in column c in
+             current document
+
+nglobalhitcount = Number of occurrences of
+                  phrase p in column c in
+                  all the documents.
+
+ndocshitcount = Number of documents in
+                which phrase p occurs
+                in column c, at least
+                once.
+\end{lstlisting}
+}
+
+
+\begin{algorithmic}
+\State ${\tt tf} \gets 0.0$
+\State ${\tt idf} \gets 0.0$
+\State ${\tt k} \gets 3.5$
+\Comment 
+{k is an experimentally determined parameter}
+\State ${\tt doclen} \gets $ length of the current document
+\State ${\tt ndoc} \gets $ Total number of documents in the corpus
+\For {each phrase {\tt p} in the user query}
+\For {each column {\tt c} in the FTS table}
+\State $w \gets $ weight for column {\tt c}
+\State $idf \gets idf + $ $log(\frac{ndoc}{ndocshitcount})\times w $
+\State $tf \gets tf + \frac{(nhitcount \times w)}{(nglobalhitcount \times doclen)}$
+\EndFor
+\EndFor
+\State $score \gets $ $\frac{(tf \times idf)}{(k + tf)}$ \\
+\Return $score$
+\end{algorithmic}
+
 \end{description}
 \section{Results}
-This section shows results of some of the sample queries on the version of
-developed as part of this project
-\textit{apropos} to demonstrate how it solves many of the problems cited earlier
-with the classical version of \textit{apropos}.
-\footnote{Although this implementation of \textit{apropos} returns 10 results
-in normal cases for a query but in the following listings the output has been
+This section shows results of some of the sample queries on new \textit{apropos}
+to demonstrate how it performs as compared to the traditional version.
+\endnote{Although this implementation of \textit{apropos} by default returns 10
+results for a query but in the following listings the output has been
 snipped to save space
-}
-\lstset{language = sh, caption={Add new user},}
+} \\
+
+{\tt \small
+\lstset{language = XML, caption={Add new user},}
 \begin{lstlisting}
 $ apropos ``add new user''
-ssh-add(1)      adds private key identities to the authentication agent...on the command line. If any file requires a passphrase, ssh-add asks for the passphrase from the user. The passphrase is read from the user's tty. ssh-add retries the last passphrase if multiple identity files are given...
+ssh-add(1)      adds private key identities to
+the authentication agent...on the command line.
+If any file requires a passphrase, ssh-add asks
+for the passphrase from the user. The
+passphrase is read from the user's tty. ssh-add
+retries the last passphrase if multiple
+identity files are given...
 
-chpass(1)       add or change user database information
+chpass(1)       add or change user database
+information
 add or change user database information
 
 useradd(8)      add a user to the system
-The useradd utility adds a user to the system, creating and populating a home directory if necessary. Any skeleton files will be provided for the new user if they exist in the skel-dir directory (see the k option). Default...
+The useradd utility adds a user to the system,
+creating and populating a home directory if
+necessary. Any skeleton files will be provided
+for the new user if they exist in the skel-dir
+directory (see the k option). Default...
 .
 .
 .
 \end{lstlisting}
-\lstset{language = sh, caption={make directory},}
+}
+
+{\tt \small
+\lstset{language = XML, caption={make directory},}
 \begin{lstlisting}
 $ apropos ``make directory''
 make(1) maintain program dependencies
-...CURDIR A path to the directory where make was executed. Refer to the description of PWD for more details. MAKE The name that make was executed with argv[0] . For compatibility make also sets .MAKE with the same value. The...
+...CURDIR A path to the directory where make
+was executed. Refer to the description of PWD
+for more details. MAKE The name that make was
+executed with argv[0].
+For compatibility make also sets .MAKE with the
+same value. The...
 
 mkdir(1)        make directories
 make directories
 
 ln(1)   make links
-...a directory in which to place the link; otherwise it is placed in the current directory. If only the directory is specified, the link will be made to the last component of source_file . Given more than two arguments, ln makes...
+...a directory in which to place the link;
+otherwise it is placed in the current directory
+If only the directory is specified, the link
+will be made to the last component of
+source_file . Given more than two arguments,
+ln makes...
 
 mkfifo(1)       make fifos
-make fifos...of a=rw mkfifo requires write permission in the parent directory. mkfifo exits 0 if successful, and >0 if an...
+make fifos...of a=rw mkfifo requires write
+permission in the parent directory. mkfifo
+exits 0 if successful, and >0 if an...
 
 mkdir(2)        make a directory file
-...will contain the directory has been exhausted. EDQUOT The user's quota of inodes on the file system on which the directory is being created has been exhausted. EIO An I/O error occurred while making the directory entry or...
+...will contain the directory has been
+exhausted. EDQUOT The user's quota of
+inodes on the file system on which the
+directory is being created has been
+exhausted. EIO An I/O error occurred
+while making the directory entry or...
 \end{lstlisting}
-\lstset{language = sh, caption={signal number to string},}
+}
+
+{\tt \small
+\lstset{language = XML, caption={signal number to string},}
 \begin{lstlisting}
 $ apropos ``signal number to string''
 psignal(3)      system signal messages
-...the signal number is not recognized sigaction(2) , the string Unknown signal is produced. The psiginfo function produces the same output as the psignal function, only it uses the signal number information from the si argument. The message strings can...
+...the signal number is not recognized
+sigaction(2) , the string Unknown signal
+is produced. The psiginfo function produces
+the same output as the psignal function,
+only it uses the signal number information
+from the si argument. The message strings can...
 
-intro(2)        introduction to system calls and error numbers
-...undefined signal to a signal(3) or kill(2) function). 23 ENFILE Too many open files in system . Maximum number...shell. Pathname A path name is a NUL -terminated character string starting with an optional slash \&/ , followed by zero or...
+intro(2)        introduction to system calls
+and error numbers
+...undefined signal to a signal(3) or kill(2)
+function). 23 ENFILE Too many open files in
+system . Maximum number...shell. Pathname A
+path name is a NUL -terminated character
+string starting with an optional slash,
+followed by zero or...
 
 dump_lfs(8)     filesystem backup
-...low estimates of the number of blocks to write, the number of tapes it...a string containing embedded formatting commands for strftime(3). The total formatted string is...in. If dump_lfs rdump_lfs receives a SIGINFO signal (see the status argument of stty...
+...low estimates of the number of blocks to
+write, the number of tapes it...a string
+containing embedded formatting commands for
+strftime(3). The total formatted string
+is...in. If dump_lfs rdump_lfs receives a
+SIGINFO signal (see the status argument of
+stty...
 \end{lstlisting}
+}
+
+\begin{figure*}[htp]
+\begin{center}
+\includegraphics [scale=0.36]{/home/abhinav/development/AsiaBSDCon/spell.png}
+\caption{The spell corrector and the CGI frontend in action}
+\label{}
+\end{center}
+\end{figure*}
 
 In \textbf{Figure 1} the spell corrector can be seen in action along with the web
-interface that was developed using \textit{apropos-utils}.
-\begin{figure}[htp]
-\includegraphics[scale=0.30]{/home/abhinav/development/AsiaBSDCon/spell.png}
-\caption{The spell corrector and the web interface in action}
-\label{}
-\end{figure}
-
+interface that was developed using \textit{apropos-utils}. \\
 
 \section{Related Work}
 There are at least two projects which are related to this in some way.
@@ -348,6 +754,7 @@ classical \textit{apropos}, it uses a Berkley DB database but still its index
 is limited to the NAME section only. It adds an option `K' to \textit{man(1)} to
 allow a crude full text search but it is not very efficient nor effective.
 \end{description}
+
 \begin{description}
 \item[mandocdb] \hfill \\
 \textit{mandocdb} [12] is more in line with the goals of this project but it
@@ -355,34 +762,51 @@ takes a novel approach. It indexes the keywords extracted from the man pages in 
 key-value store using btree(3) [13]. It also comes with its own implementation
 of \textit{apropos} which performs search using this key-value store. The
 main key point of this implementation is that it exploits the semantic structure
-of the man pages.
+but rather than indexing the complete content, it plucks out specific pieces of
+information from the man pages, for example Author names, function names,
+header file names, etc.
+from the man pages. It is more sophisticated and much more useful than classic
+\textit{apropos}, but it is still essentially a keyword lookup based
+implementation.
 \end{description}
+
+
 \section{Future Work}
 \begin{description}
 \item[Work on Ranking Algorithm] \hfill \\
-A ranking algorithm based on probabilistic model of information retrieval [14]
-has been implemented to perform relevance ranking of the search
-results. It is essentially based on the Okapi BM25F algorithm [15] and
+The ranking algorithm is based on the probabilistic model of information
+retrieval [14]results. It
 uses certain parameters whose values are usually dependent on the corpus and the
 search application. For example, certain weight parameters have been assigned to
 different sections of man pages, signifying how important the information in a
 particular section is as compared to the rest of the sections. At the moment
 these values have been determined
 manually but one goal is to use some supervised machine learning techniques in
-order to automate this.
+order to automate this so that more better search results can be obtained.
 \end{description}
+
 \begin{description}
-\item[Fix Some Loose Ends In Parsing of man pages] \hfill \\
-Although the parsing routine is working fine for most purposes on the man pages
-supplied with NetBSD and also on most of the man pages found in Pkgsrc. But there
-are perhaps a few corner cases yet to be identified and fixed. Besides that,
-another issue that is to be addressed is the parsing of the escape sequences
-which are used extensively in the \textit{man(7)} [16] based man pages. These
-issues are to be addressed in the coming days.
+\item[Using external storage] \hfill \\
+A new feature is under development in \textit{Sqlite}, to support external
+storage option in FTS databases. This option would allow building the FTS
+index without actually storing any content in the database itself (except for
+the data required to maintain the indexes). This will save bulk of the disk
+space currently required by \textit{apropos} database. The disk space thus
+saved might also allow for experiments with ranking algorithms which require
+storing additional metadata on the disk.
 \end{description}
+
 \section{Availability}
-The code for this project is hosted on \textit{Github} and it is under active development. It can be obtained from:\newline
- \emph{https://github.com/abhinav-upadhyay/apropos\_replacement}
+The code for this project has been imported into the NetBSD source tree and
+being maintained there. Experimental work is still being done in the \textit
+{github} repository of the project. It can be obtained from:\newline
+
+{\tt
+ \emph{https://github.com/abhinav-upadhyay/
+ apropos\_replacement}
+}
+
+
 \section{Acknowledgement}
 This project has been developed as part of \emph{Google Summer of Code 2011}
 [17], so thanks to \textbf{Google} for sponsoring it. Special thanks to
@@ -392,15 +816,24 @@ code. We would like to thank \textbf{David Young} who was involved with
 this project closely and offered useful help and guidance throughout. A special
 thanks goes to \textbf{Thomas Klausner} who helped in writing and reviewing
 man pages for this project. Thanks to \textbf{Petra Zeidler} for administering
-the GSoC program for \textit{The NetBSD Foundation}.
+the GSoC program for \textit{The NetBSD Foundation}. \\
+
 \begin{thebibliography}{20}
 \bibitem{1}
-\emph{NetBSD manual page for apropos(1)}
-\newline http://netbsd.gw.com/cgi-bin/man-cgi?apropos++NetBSD-5.1
+\emph{NetBSD manual page for the old version of apropos}
+\newline
+{\tt
+http://netbsd.gw.com/cgi-bin/
+man-cgi?apropos++NetBSD-5.1
+}
 
 \bibitem{2}
-\emph{NetBSD manual page for makewhatis(1)}
-\newline http://netbsd.gw.com/cgi-bin/man-cgi?makewhatis++NetBSD-5.1
+\emph{NetBSD manual page for makewhatis(8)}
+\newline
+{\tt
+http://netbsd.gw.com/cgi-bin/
+man-cgi?makewhatis++NetBSD-5.1
+}
 
 \bibitem{3}
 Brin, S.; Page L.
@@ -422,35 +855,62 @@ Program,
 \bibitem{6}
 \emph{mdocml online manual page for
 libmandoc}
-\newline http://mdocml.bsd.lv/mandoc.3.html
+\newline
+{\tt
+http://mdocml.bsd.lv/mandoc.3.html
+}
 
 \bibitem{7}
 \emph{Sqlite home page}
-\newline http://sqlite.org
+\newline
+{\tt
+http://sqlite.org
+}
 
 \bibitem{8}
 \emph{Sqlite FTS3 and FTS4 Extensions}
-\newline  http://sqlite.org/fts3.html
+\newline
+{\tt
+http://sqlite.org/fts3.html
+}
 
 \bibitem{9}
-\emph{Online manual page for makemandb(1)}
-\newline http://netbsd-soc.sourceforge.net/projects/apropos\_replacement/makemandb.html1
+\emph{Online manual page for makemandb(8)}
+\newline
+{\tt
+http://netbsd.gw.com/cgi-bin/
+man-cgi?makemandb++NetBSD-current
+}
 
 \bibitem{10}
 \emph{Online manual page for apropos-utils(3)}
-\newline http://netbsd-soc.sourceforge.net/projects/apropos\_replacement/apropos-utils.html3
+\newline
+{\tt
+http://netbsd-soc.sf.net/projects/
+apropos\_replacement/apropos-utils.html3
+}
 
 \bibitem{101}
 \emph{man-db, the on-line manual database}
-\newline http://man-db.nongnu.org/
+\newline
+{\tt
+http://man-db.nongnu.org/
+}
 
 \bibitem{12}
-\emph{Online manual page for mandocdb(1)}
-\newline http://mdocml.bsd.lv/mandocdb.8.html
+\emph{Online manual page for mandocdb(8)}
+\newline
+{\tt
+http://mdocml.bsd.lv/mandocdb.8.html
+}
 
 \bibitem{13}
 \emph{NetBSD online manual page for btree(3)}
-\newline http://netbsd.gw.com/cgi-bin/man-cgi?btree+3+NetBSD-5.1
+\newline
+{\tt
+http://netbsd.gw.com/cgi-bin/
+man-cgi?btree+3+NetBSD-5.1
+}
 
 \bibitem{14}
 Fuhr, Norbert
@@ -467,14 +927,38 @@ In proceedings of TREC-2004
 
 \bibitem{16}
 \emph{Online manual page for man(7)}
-\newline http://mdocml.bsd.lv/man.7.html
+\newline
+{\tt
+http://mdocml.bsd.lv/man.7.html
+}
 
 \bibitem{17}
 \emph{Google Summer of Code home page}
-\newline http://code.google.com/soc/
+\newline
+{\tt
+http://code.google.com/soc/
+}
 
 \bibitem{18}
 \emph {The mdocml project home page}
-\newline http://mdocml.bsd.lv
+\newline
+{\tt
+http://mdocml.bsd.lv
+}
+
+\bibitem{19}
+Jones, Sparck K.
+\emph {A statistical interpretation of term specificity and its application in retrieval.}
+Journal of Documentation
+Volume 28 Number 1 1972 pp. 11-21
+\newline
+{\tt
+http://mdocml.bsd.lv
+}
+
 \end{thebibliography}
+
+\theendnotes
+
 \end{document}
+
