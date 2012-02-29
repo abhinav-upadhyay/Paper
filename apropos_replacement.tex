@@ -50,7 +50,7 @@ $<$joerg@NetBSD.org$>$
 Manual pages are a key component of Unix like operating systems, they have
 played a significant role in the success of Unix over the years. Man pages are
 the most authentic source of reference for a system administrator or a
-programmer. However, so far, there has been a lack of good search tool to make
+programmer. However, there has been a lack of good search tool to make
 man pages more accessible. \\
 
 Traditionally, \textit{apropos(1)} has been there as a search interface but it
@@ -59,8 +59,9 @@ and that is the primary reason for its simple design and limited search
 capabilities. \\
 
 This paper discusses a new implementation of \textit{apropos} done by
-Abhinav Upadhyay as part of
-Google Summer of Code 2011. The goal of this project was to replace the
+Abhinav Upadhyay and mentored by Joerg Sonnenberger as part of
+Google Summer of Code 2011, for The NetBSD Foundation. The goal of this project
+was to replace the
 conventional apropos in NetBSD with a modern version which supports full text
 searches. \\
 
@@ -75,15 +76,14 @@ consisting of keywords hardly takes few hundreds of kilo bytes of disk space
 and performing search on a plain text file is quite easy. \\
 
 This simplified design of \textit{apropos} resulted in limited utility and
-usability, as the searches are limited to the keywords defined in the NAME
-section of the man pages. Only if the users know the exact keywords do they get
+usability. Only if the users know the exact keywords do they get
 the appropriate results; otherwise most of
 the times the searches are full of irrelevant results or possibly a dead end. 
 In the modern
-computing world where hard problems like searching the World Wide Web have been
+computing world, where hard problems like searching the World Wide Web have been
 solved [3] to a sufficient degree, it makes perfect sense to leverage the
-advancement in technology in order to solve the problem. This problem is made
-even simpler considering that the man pages consist of structured data. \\
+advancement in technology in order to come up with a better search tool for
+man pages. \\
 
 In present times, the machines are powerful and  capable of running the search
 algorithms efficiently. Disk
@@ -104,12 +104,12 @@ analyzed. \\
 \subsection{Lack of support for free form queries}
 As noted earlier the conventional \textit{apropos} is limited to the keywords
 used in the NAME section of the man pages. This means that the users do not have
-a whole lot of choice for specifying keywords in their queries. Besides they
-cannot search for keywords which are not usually specified in the title of a man
-page, for example a query like ``EINVAL'' would return no results. \\
+a whole lot of options for specifying keywords in their queries. Besides this,
+they cannot search for keywords which are not usually specified in the title of
+a man page, for example a query like {\tt EINVAL} would return no results. \\
 
 {\tt \small
-\lstset{language = sh, caption={No results for free form queries}}
+\lstset{language = XML, caption={No results for free form queries}}
 \begin{lstlisting}
 $ apropos ``add new user''
 add new user: nothing appropriate
@@ -124,7 +124,8 @@ termcap database: nothing appropriate
 
 \subsection{Lack of basic language support}
 Another major limitation of the classical version of \textit{apropos} is that
-it is not smart enough to provide basic natural language processing constructs,
+it is not smart enough to provide support for basic natural language processing
+constructs,
 like stemming or spelling corrections.
 For example in the following listing it can be seen
 that while \textit{apropos} returns the correct result for the query
@@ -133,16 +134,17 @@ is used in place of \textit{``directories''}, even though the two words are base
 on same root word. \\
 
 {\tt \small
-\lstset{language = sh, caption={No support for stems or words with same root},}
+\lstset{language = XML, caption={No support for stems or words with same root},}
 \begin{lstlisting}
 $ apropos ``make directories''
 mkdir (1) - make directories
+
 $ apropos ``make directory''
 make directory: nothing appropriate
 
 $ apropos ``upgrading package''
-pkg_add (1) - a utility for installing and upgrading software package
-distributions
+pkg_add (1) - a utility for installing and
+upgrading software package distributions
 
 $ apropos ``upgrading packages''
 upgrading packages: nothing appropriate
@@ -157,6 +159,7 @@ Similarly, it is very common for users to misspell keywords in a query and \text
 $ apropos ``copy strings''
 stpcpy, stpncpy, strcpy, strncpy (3) - copy
 strings
+
 $ apropos ``coppy strings''
 coppy strings: nothing appropriate
 \end{lstlisting}
@@ -209,8 +212,10 @@ maintained by \textit{apropos}, but yet again, the simplistic implementation of
 \section{Solution: A new apropos}
 This project proposes a very simple and straightforward solution to solve these
 problems and make man pages more usable. The idea is to exploit the inherent
-semantics and structure of the man pages. The \textit{mdoc(7)}
-macros are semantically quite rich, those macros combined with the context of the surrounding section or context in which they have been used, can be used
+semantics and structure of the man pages. The \textit{mdoc(7)} [21] and
+\textit{man(7)} [16] macros used for writing man pages are semantically quite
+rich, those macros combined with the context of the surrounding section of the
+man page in which they have been used, can act
 as an indicator of the relevancy of the content. For example, the
 {\tt \small
 .Nm
@@ -225,10 +230,13 @@ those \textit{errno} values in the
 {\tt \small
 RETURN VALUES
 }
-section of various man pages from section 3. In essence, it should be possible
+section of various man pages from section 3. \\
+
+In essence, it should be possible
 to parse and extract the structurally meaningful data
-out of man pages and index them in the form of an inverted index [4]. An
-inverted index is a specialized data structure for building search engines. The index combined with a ranking algorithm which exploits the structured nature of the data to give back more relevant results to the user, can be used to build a
+out of man pages and index them in the form of an inverted index [4]. The index
+combined with a ranking algorithm which exploits the structured nature of the
+data to give back more relevant results to the user, can be used to build a
 high quality search interface for manual pages.
 Such a search tool will solve many of the problems associated with the conventional \textit{apropos(1)} as noted
 before and discussed as follows: \\
@@ -272,8 +280,11 @@ mess in the makefiles.
 The two main operations that are critical for this project are parsing of the
 man pages and building of an index of the
 data obtained from the parsing process. These are highly specific problems, and
-solving them from scratch would be a separate project in its own right, therefore this project tried to avoid reinventing the wheel and used existing
-tools and libraries which are battle tested and very successful. \textit{libmandoc} [6] from \textit{mdocml} [18] project has been used for parsing the man pages and \textit{sqlite} [7] for indexing and storing the parsed
+solving them from scratch would be a separate project in its own right,
+therefore this project tried to avoid reinventing the wheel and used existing
+tools and libraries which are battle tested and very successful.
+\textit{libmandoc} [6] from \textit{mdocml} [18] project has been used for
+parsing the man pages and \textit{sqlite} [7] for indexing and storing the parsed
 data on the file system.
 
 \begin{description}
@@ -298,9 +309,6 @@ of normal database tables without any hassles.
 \end{description}
 
 \section{Implementation Details}
-Due to space constraints it is not possible to go into enough implementation
-details, the most important components of this project are described in brief
-in this section.
 
 \subsection{makemandb}
 \textit{makemandb(8)} [9] is the key component of this implementation. It is a
@@ -338,7 +346,7 @@ columns stored the name of the man page and the one line description from the
 {\tt
 NAME
 }
-section, while the
+section respectively, while the
 {\tt
 desc
 }
@@ -346,7 +354,7 @@ column stored the content from the rest of the sections. This approach worked
 quite well for a small set of man pages (for example the 4000 or so man pages in
 the base set of NetBSD). However, as the number of documents were increased (for example including man pages from pkgsrc), the quality of search started deteriorating. This was mainly because bulk of the parsed data was being stored
 in the same column in the database and the ranking algorithm had no way of
-identifying more relevant results apart from the number of matches in any page. \\
+identifying more relevant results except from identifying whether the match was found in the {\tt NAME} section or any other section. \\
 
 To rectify this, first there was an attempt to try out better ranking schemes
 (the various ranking schemes that were tried out during the development of the
@@ -355,7 +363,7 @@ term weights [19] on the file system, this almost doubled the storage requiremen
 database schema was decomposed further into more columns. The decomposition into
 more columns was done to represent the most commonly occurring sections in usual Unix man pages, for example
 {\tt NAME, DESCRIPTION, LIBRARY, RETURN VALUES, EXIT STATUS, ERRORS}
-etc. Such a decomposition allowed for an elaborate ranking algorithm, which could
+etc. Such a decomposition allowed for an elaborate ranking scheme, which could
 assign different weights to each of these columns, based on their relevancy. The
 final schema of the database is shown in {\bf Listing 5}
 \end{description}
@@ -371,12 +379,13 @@ sophisticated ranking algorithm to filter out the most relevant results and rank
 them up. To avoid cluttering the output and make the user interface clean, the
 new \textit{apropos} displays only the top 10 results by default with options
 to display more results if required. During the development and testing of the
-project it has been observed that, for a reasonable query, the top 10 results
-are most often sufficient. \\
+project it has been observed that, for a query, most often than not the top 10
+results are sufficient. \\
 
 Another key aspect of any search application is to filter out or avoid stop-words
 . Words like \textit{``the'', ``a'', ``an'', ``'this''} etc. come under the
-category of stop-words, words which are \emph{very} commonly used in the
+category of stop-words, these are the words which are \emph{very} commonly used
+in the
 language. Stop-words usually skew the search results because of their sheer
 frequency in the corpus. The usual practice in the information retrieval world
 is to filter such stop-words while building the index, however, in case of this
@@ -390,6 +399,9 @@ not come under the category of stop-words. \\
 \lstset{language = XML, caption={Database Schema},}
 \begin{lstlisting}
 The Database has three tables at present:
+1. mandb
+2. mandb_meta
+3. mandb_links
 
 (1) mandb:
     The main FTS table which contains all
@@ -490,18 +502,12 @@ pages in the corpus.
 \item[2.] \hfill \\
 As more and more man pages were being added to the corpus for testing purposes,
 the quality of search results started to dilute. At this point of time, a
-completely new approach was adopted for ranking the results. In the literature
-related to information retrieval, \textit{tf-idf} [19] weights based ranking models are very common. The \textit{tf} in \textit{tf-idf} stands for \emph{Term Frequency} and \textit{idf} stands for \emph{Inverse Document Frequency}. \\
+completely new approach was adopted for ranking the results. In the information
+retrieval literature, \textit{tf-idf} [19] weights based ranking models are very common. The \textit{tf} in \textit{tf-idf} stands for \emph{Term Frequency} and \textit{idf} stands for \emph{Inverse Document Frequency}. \\
 
-{\bf Term Frequency}: Term frequency refers to the count of the number of times
-a given term
-{\tt \small
-t
-}
-appears in a given document
-{\tt \small
-d
-} \\
+{\bf Term Frequency}: The term frequency of a term {\tt \small t} in a document
+{\tt d} refers to the count of the number of times the term {\tt \small t}
+appears in the document {\tt \small d } \\
 
 {\bf Inverse Document Frequency:} The \textit{idf} of a term
 {\tt \small
@@ -511,11 +517,11 @@ is the number of documents in which the term appears \textit{at least once}. \\
 
 Term frequency is a \textit{local} factor, it is concerned only with the number
 of occurrences of the search terms in one particular document at a time.
-While inverse document frequency is a \textit{global} factor, in the sense that,
+While inverse document frequency is a \textit{global} factor, in the sense that
 it indicates the discriminating power of a term. If a term appears in only a
 selected set of documents, then that term separates those set of
 documents from the rest. Therefore, ranking obtained by combining these two factors
-brings up more relevant documents.
+brings up more relevant documents. \\
 
 The weight of a term
 {\tt \small t} in document {\tt \small d} is calculated by the following
@@ -534,14 +540,13 @@ Inverse document frequency is calculated using the following formula:
 Where $N$ = Total number of documents in the corpus \\
 $N_t$ = Number of documents in which term $t$ occurs (at least once). \\
 
-So for a term which appears in only one document it will have
+So for a term which appears in only one document, it will have
 $idf = log(n)$,
 while a term which appears in all the documents, it will have
-$idf = log(1) = 0$
-
+$idf = log(1) = 0$.
 For example a term like \textit{``the''} will have a high
-\textit{term frequency} in any
-document, but at the same time it will have a lower \textit{inverse document frequency} (almost close to $0$), which will nullify its effect on the quality of search results.
+\textit{term frequency} in almost all the
+documents, but at the same time it will have its \textit{inverse document frequency} almost close to $0$, which will nullify its effect on the quality of search results. \\
 
 A lot of research has been done on \textit{tf-idf} weights based ranking
 algorithms and various techniques have been proposed over the years. According
@@ -553,8 +558,8 @@ following ranking scheme was found to be most effective:
 \end{center}
 
 The implementation of the above scheme proved to be \emph{very} slow. It required
-too many computations and all of these were required to be done for each
-search result separately to compute its relevance weight. In an state of the
+too many computations and these were required to be done for each
+search result separately to compute its relevance weight. In a state of the
 art search application, the index would usually store precomputed \textit{tf-idf}
 weights on the file system, in which case the overhead of computing weights of
 each individual search result would require very less work, leading to better
@@ -574,21 +579,24 @@ disk space, the disk space requirements of new \textit{apropos} seemed
 hyperbolic, therefore it was decided later on to look for alternative ranking
 schemes. At this point the database schema was decomposed into several columns
 representing some of the most common sections found in man pages
-(see {\bf Listing 5}).
+(see {\bf Listing 5}) and a fast yet sophisticated ranking algorithm was adopted,
+to exploit this structured nature of the data. \\
 
-At this point a fast yet sophisticated ranking algorithm was adopted.
 \emph{Okapi BM25F} [15] is considered one of the most successful probabilistic
-models for information retrieval. \emph{Okapi BM25F} is based on \emph{tf-idf}
+models for information retrieval. It is based on \emph{tf-idf}
 scheme but it takes into account for the structure of the data. It allows for
 separate weights to be assigned for different parts of a structured document to
-come up with better relevance rankings. This scheme works very well for man pages
-because of their highly structured content. The algorithm is described in pseudo-code below. \textit{apropos} calls this function for each of the document
-obtained as part of the result set for the query and computes its relevancy
-weight. The documents are ranked in decreasing order of the weights returned
-from this function. \\
+come up with better relevance rankings. The exact implementation of this
+algorithm did not really provide any great results and therefore it had to be
+adapted and modified to suit the needs of \textit{apropos}, considering the
+structure of the database schema. The actual algorithm implemented is
+described in pseudo-code below. \textit{apropos} executes this function for each
+of the document obtained as part of the result set for the query and computes
+their relevancy weight. The documents are ranked in decreasing order of their
+weights. \\
 
 {\tt
-\lstset{language = sh, caption={Definition of important entities used in
+\lstset{language = XML, caption={Definition of important entities used in
 algorithm \ref{alg1}},}
 \begin{lstlisting}
 nhitcount =  Number of occurrences of
@@ -611,6 +619,8 @@ ndocshitcount = Number of documents in
 \begin{algorithmic}[1]
 \Require{User query {\tt q}}
 \Require{Document {\tt d} whose weight needs to be computed}
+\Require {An array {\tt weights} consisting of preassigned weights for different
+columns of the FTS table}
 \State ${\tt tf} \gets 0.0$
 \State ${\tt idf} \gets 0.0$
 \State ${\tt k} \gets 3.5$
@@ -620,7 +630,8 @@ ndocshitcount = Number of documents in
 \State ${\tt ndoc} \gets $ Total number of documents in the corpus
 \For{each phrase {\tt p} in {\tt q}}
 \For {each column {\tt c} in the FTS table}
-\State $w \gets $ weight for column {\tt c}
+\State $w \gets weights[c] $
+\Comment {weight for column {\tt c}}
 \State $idf \gets idf + $ $log(\frac{ndoc}{ndocshitcount})\times w $
 \State $tf \gets tf + \frac{(nhitcount \times w)}{(nglobalhitcount \times doclen)}$
 \EndFor
@@ -666,6 +677,7 @@ directory (see the k option). Default...
 .
 \end{lstlisting}
 }
+
 
 {\tt \small
 \lstset{language = XML, caption={make directory},}
@@ -749,7 +761,6 @@ In \textbf{Figure 1} the spell corrector can be seen in action along with the we
 interface that was developed using \textit{apropos-utils}. \\
 
 \section{Related Work}
-There are at least two projects which are related to this in some way.
 \begin{description}
 \item[man-db] \hfill \\
 \textit{man-db} [11] is a complete implementation of the man page documentation
@@ -762,15 +773,16 @@ allow a crude full text search but it is not very efficient nor effective.
 
 \begin{description}
 \item[mandocdb] \hfill \\
-\textit{mandocdb} [12] is more in line with the goals of this project but it
+\textit{mandocdb} [12] is part of the \textit{mdocml} project and it is more in
+line with the goals of this project but it
 takes a novel approach. It indexes the keywords extracted from the man pages in a
 key-value store using btree(3) [13]. It also comes with its own implementation
 of \textit{apropos} which performs search using this key-value store. The
-main key point of this implementation is that it exploits the semantic structure
+key point of this implementation is that it exploits the semantic structure
 but rather than indexing the complete content, it plucks out specific pieces of
 information from the man pages, for example author names, function names,
-header file names, etc.
-from the man pages. It is more sophisticated and much more useful than classic
+header file names, etc. It is more sophisticated and much more useful than
+classic
 \textit{apropos}, but it is still essentially a keyword lookup based
 implementation.
 \end{description}
@@ -814,14 +826,14 @@ being maintained there. Experimental work is still being done in the \textit
 
 \section{Acknowledgement}
 This project has been developed as part of \emph{Google Summer of Code 2011}
-[17], so thanks to \textbf{Google} for sponsoring it. Special thanks to
+[17], thanks to \textbf{Google} for sponsoring it. Special thanks to
 \textbf{Kristaps Dzonsons} who is the developer of the \textit{mdocml} [18]
 project, he also helped by pointing out several issues in the parsing related
-code. We would like to thank \textbf{David Young} who was involved with
-this project closely and offered useful help and guidance throughout. A special
-thanks goes to \textbf{Thomas Klausner} who helped in writing and reviewing
-man pages for this project. Thanks to \textbf{Petra Zeidler} for administering
-the GSoC program for \textit{The NetBSD Foundation}. \\
+code. Thanks to \textbf{David Young} who was involved with
+this project closely and offered useful guidance and encouragement throughout. A
+special thanks goes to \textbf{Thomas Klausner} who helped in writing and
+reviewing the man pages for this project. Thanks to \textbf{Petra Zeidler} for
+administering the GSoC program for \textit{The NetBSD Foundation}. \\
 
 \begin{thebibliography}{20}
 \bibitem{1}
@@ -964,6 +976,14 @@ Salton, Gerard; Buckley C.
 \emph {Term-Weighting Approaches in Automatic Text Retrieval.}
 Information Processing \& Management Vol. 24, No. 5, pp. 513-523,
 1988
+
+\bibitem{21}
+\emph{Online manual page for mdoc(7)}
+\newline
+{\tt
+http://mdocml.bsd.lv/mdoc.7.html
+}
+
 
 \end{thebibliography}
 
