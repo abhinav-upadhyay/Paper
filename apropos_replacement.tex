@@ -109,11 +109,30 @@ As noted earlier the conventional \textit{apropos} is limited to the keywords
 used in the NAME section of the man pages. This means that the users do not have
 a whole lot of options for specifying keywords in their queries. Besides this,
 they cannot search for keywords which are not usually specified in the title of
-a man page, for example a query like {\tt EINVAL} would return no results. \\
+a man page, for example a query like {\tt EINVAL} would return no results.
+See {\bf listing \ref{lst:noFreeFormQuery}} for concrete examples.  \\
+
+\subsection{Lack of basic language support}
+Another major limitation of the classical version of \textit{apropos} is that
+it is not smart enough to provide support for basic natural language processing
+constructs,
+like stemming or spelling corrections.
+As it can be seen in {\bf listing \ref{noStemming}},
+while \textit{apropos} returns the correct result for the query
+\textit{``make directories''}, it fails when the keyword \textit{``directory''}
+is used in place of \textit{``directories''}, even though the two words are based
+on same root word. \\
+
+Similarly, it is very common for users to misspell keywords in a query and \textit{apropos} has no support for detecting it and offering any useful behavior either (see {\bf listing \ref{noSpell}}).
+
+\subsection{Unintelligible Output}
+Because of the way \textit{apropos} works, sometimes its output can be
+unintelligible and it can be very hard for the user to identify relevant results, see {\bf listing \ref{unintelligibleOutput}} for an example. \\
 
 {\small
-\lstset{language = XML, caption={No results for free form queries}}
-\begin{lstlisting}
+\lstset{language = XML, caption={No results for free form queries},
+label={lst:noFreeFormQuery}}
+\begin{lstlisting}[float=*]
 $ apropos %\normalfont\upshape``%add new user%\normalfont\upshape''%
 add new user: nothing appropriate
 
@@ -125,20 +144,11 @@ termcap database: nothing appropriate
 \end{lstlisting}
 }
 
-\subsection{Lack of basic language support}
-Another major limitation of the classical version of \textit{apropos} is that
-it is not smart enough to provide support for basic natural language processing
-constructs,
-like stemming or spelling corrections.
-For example in the following listing it can be seen
-that while \textit{apropos} returns the correct result for the query
-\textit{``make directories''}, it fails when the keyword \textit{``directory''}
-is used in place of \textit{``directories''}, even though the two words are based
-on same root word. \\
 
 {\small
-\lstset{language = XML, caption={No support for stems or words with same root},}
-\begin{lstlisting}
+\lstset{language = XML, caption={No support for stems or words with same root},
+label=noStemming}
+\begin{lstlisting}[float=*]
 $ apropos %\normalfont\upshape``%make directories%\normalfont\upshape"%
 mkdir (1) - make directories
 
@@ -146,8 +156,7 @@ $ apropos %\normalfont\upshape"%make directory%\normalfont\upshape"%
 make directory: nothing appropriate
 
 $ apropos %\normalfont\upshape``%upgrading package%\normalfont\upshape''%
-pkg_add (1) - a utility for installing and
-upgrading software package distributions
+pkg_add (1) - a utility for installing and upgrading software package distributions
 
 $ apropos %\normalfont\upshape``%upgrading packages%\normalfont\upshape''%
 upgrading packages: nothing appropriate
@@ -155,27 +164,22 @@ upgrading packages: nothing appropriate
 }
 
 
-Similarly, it is very common for users to misspell keywords in a query and \textit{apropos} has no support for it either.
-
 {\tt \small
-\lstset{language = sh, caption={No spelling correction},}
-\begin{lstlisting}
+\lstset{language = sh, caption={No spelling correction}, label=noSpell}
+\begin{lstlisting}[float=*]
 $ apropos %\normalfont\upshape``%copy strings%\normalfont\upshape''%
-stpcpy, stpncpy, strcpy, strncpy (3) - copy
-strings
+stpcpy, stpncpy, strcpy, strncpy (3) - copy strings
 
 $ apropos %\normalfont\upshape``%coppy strings%\normalfont\upshape''%
 coppy strings: nothing appropriate
 \end{lstlisting}
 }
 
-\subsection{Unintelligible Output}
-Because of the way \textit{apropos} works, sometimes its output can be
-unintelligible and it can be very hard for the user to identify relevant results. \\
 
 {\tt \small
-\lstset{language = sh, caption={Unintelligible output of \textit{apropos(1)}},}
-\begin{lstlisting}
+\lstset{language = sh, caption={Unintelligible output of \textit{apropos(1)}},
+label=unintelligibleOutput}
+\begin{lstlisting}[float=*]
 $ apropos power
 PCI, pci_activate, pci_bus_devorder, pci_chipset_tag_create,
 pci_chipset_tag_destroy, pci_conf_read, pci_conf_write,
@@ -337,24 +341,19 @@ data out of them, later on storing the data in the FTS table in the database.
 \item[Database Schema] \hfill \\
 During the initial stage of the project, the structure of the database was kept
 simple. The FTS table consisted of 3 columns:
-{\tt name}, {\tt name\_desc}, and {\tt desc}.
-The
+{\tt name}, {\tt name\_desc}, and {\tt desc}. The
 {\tt
 name
-}
-and
+}and
 {\tt
 name\_desc
-}
-columns stored the name of the man page and the one line description from the
+}columns stored the name of the man page and the one line description from the
 {\tt
 NAME
-}
-section respectively, while the
+}section respectively, while the
 {\tt
 desc
-}
-column stored the content from the rest of the sections. This approach worked
+}column stored the content from the rest of the sections. This approach worked
 quite well for a small set of man pages (for example the 4000 or so man pages in
 the base set of NetBSD). However, as the number of documents were increased (for example including man pages from pkgsrc), the quality of search started deteriorating. This was mainly because bulk of the parsed data was being stored
 in the same column in the database and the ranking algorithm had no way of
@@ -370,7 +369,59 @@ more columns was done to represent the most commonly occurring sections in usual
 {\tt EXIT STATUS}, {\tt ERRORS}
 etc. Such a decomposition allowed for an elaborate ranking scheme, which could
 assign different weights to each of these columns, based on their relevancy. The
-final schema of the database is shown in {\bf Listing 5}
+final schema of the database is shown in {\bf listing \ref{schema}}
+{\tt \small
+\lstset{language = XML, caption={Database Schema}, label={schema}}
+\begin{lstlisting}[float=*]
+The Database has three tables:
+1. mandb
+2. mandb_meta
+3. mandb_links
+
+(1) mandb:
+    The main FTS table which contains all the content parsed from man pages
+
+  COLUMN NAME       DESCRIPTION
+  1. section        Section number
+  2. name           The name of the man page  
+  3. name_desc      Short description from NAME section  
+  4. desc           Contains the content from DESCRIPTION section and any other
+                    section which is not stored in a separate column.
+  5. lib            The LIBRARY section
+  6. return_vals    RETURN VALUES section
+  7. env            ENVIRONMENT section
+  8. files          FILES section
+  9. exit_status    EXIT STATUS section
+  10. diagnostics   DIAGNOSTICS section
+  11. errors        ERRORS section
+  12. md5_hash      An MD5 hash of the contents of the man page (UNIQUE).
+  
+  
+(2) mandb_meta:
+    This table maintains essential metadata of all the indexed man page files.
+
+  COLUMN NAME       DESCRIPTION
+  1. device         (dev_t)Logical device number from stat(2)
+  2. inode          (ino_t)Inode number from stat(2)
+  3. mtime          Last modification time from stat(2)
+  4. file           Absolute path name (UNIQUE constraint)
+  5. md5_hash       MD5 Hash of the man page file (UNIQUE)
+  6. id             A unique integer ID referring to a page in mandb (PRIMARY KEY)
+
+(3) mandb_links:
+    This is an index of all the hard/soft links of the man pages. The list of
+    the aliases is usually obtained from the multiple .Nm entries in the NAME
+    section of a man page.
+
+  COLUMN NAME       DESCRIPTION
+  1. link           The name of the hard/soft link (UNIQUE index) 
+  2. target         Name of the target page to which the link points  
+  3. section        The section number
+  4. machine        The machine architecture (if any) for which the page is
+                    relevant.
+\end{lstlisting}
+}
+
 \end{description}
 
 \subsection{apropos}
@@ -400,79 +451,6 @@ a reasonable trade off can be made by filtering out any stop-words from the
 user's search query and querying the database for only the keywords which do
 not come under the category of stop-words. \\
 
-{\tt \small
-\lstset{language = XML, caption={Database Schema},}
-\begin{lstlisting}
-The Database has three tables at present:
-1. mandb
-2. mandb_meta
-3. mandb_links
-
-(1) mandb:
-    The main FTS table which contains all
-    the content parsed from man pages
-
-  COLUMN NAME       DESCRIPTION
-  1. section        Section number
-  2. name           The name of the page  
-  3. name_desc      Short description from
-                    NAME section  
-  4. desc           Contains the content
-                    from DESCRIPTION
-                    section and any other
-                    section which is not
-                    stored in a separate
-                    column.
-  5. lib            The LIBRARY section
-  6. return_vals    RETURN VALUES section
-  7. env            ENVIRONMENT section
-  8. files          FILES section
-  9. exit_status    EXIT STATUS section
-  10. diagnostics   DIAGNOSTICS section
-  11. errors        ERRORS section
-  12. md5_hash      An MD5 hash of the
-                    contents of the man
-                    page (UNIQUE).
-(2) mandb_meta:
-    This table maintains essential
-    metadata of all the indexed
-    man page files.
-
-  COLUMN NAME       DESCRIPTION
-  1. device         (dev_t)Logical device
-                    number from stat(2)
-  2. inode          (ino_t)Inode number
-                    from stat(2)
-  3. mtime          Last modification time
-                    from stat(2)
-  4. file           Absolute path name
-                    (UNIQUE constraint)
-  5. md5_hash       MD5 Hash of the man
-                    page
-  6. id             A unique integer ID
-                    referring to a page
-                    in mandb (PRIMARY KEY)
-
-(3) mandb_links:
-    This is an index of all the hard/soft
-    links of the man pages. The list of
-    the linked pages is usually obtained 
-    from the multiple .Nm entries in the
-    page.
-
-  COLUMN NAME       DESCRIPTION
-  1. link           The name of the hard/
-                    soft link (UNIQUE index) 
-  2. target         Name of the target
-                    page to which it
-                    points  
-  3. section        The section number  
-  4. machine        The machine
-                    architecture (if any)
-                    for which the page is
-                    relevant.
-\end{lstlisting}
-}
 
 \subsection{apropos-utils}
 \textit{apropos-utils} [10] is a small library interface provided with this
@@ -647,123 +625,18 @@ columns of the FTS table}
 \end{algorithm}
 \end{description}
 
+\pagebreak
 \section{Results}
-This section shows results of some of the sample queries on new \textit{apropos}
-to demonstrate how it performs as compared to the traditional version. \\
-%\footnote{Although the new \textit{apropos} by default returns 10
-%results for a query but in the listings the output has been
-%snipped to save space
-%} \\
-
-{ \small
-\lstset{language = XML, caption={Add new user},}
-\begin{lstlisting}
-$ apropos %\normalfont\upshape``%add new user%\normalfont\upshape''%
-ssh-add(1)      adds private key identities to
-the authentication agent...on the command line.
-If any file requires a passphrase, ssh-add asks
-for the passphrase from the user. The
-passphrase is read from the user's tty. ssh-add
-retries the last passphrase if multiple
-identity files are given...
-
-chpass(1)       add or change user database
-information
-add or change user database information
-
-useradd(8)      add a user to the system
-The useradd utility adds a user to the system,
-creating and populating a home directory if
-necessary. Any skeleton files will be provided
-for the new user if they exist in the skel-dir
-directory (see the k option). Default...
-.
-.
-.
-\end{lstlisting}
-}
-
-
-{\tt \small
-\lstset{language = XML, caption={make directory},}
-\begin{lstlisting}
-$ apropos %\normalfont\upshape``%make directory%\normalfont\upshape''%
-make(1) maintain program dependencies
-...CURDIR A path to the directory where make
-was executed. Refer to the description of PWD
-for more details. MAKE The name that make was
-executed with argv[0].
-For compatibility make also sets .MAKE with the
-same value. The...
-
-mkdir(1)        make directories
-make directories
-
-ln(1)   make links
-...a directory in which to place the link;
-otherwise it is placed in the current directory
-If only the directory is specified, the link
-will be made to the last component of
-source_file . Given more than two arguments,
-ln makes...
-
-mkfifo(1)       make fifos
-make fifos...of a=rw mkfifo requires write
-permission in the parent directory. mkfifo
-exits 0 if successful, and >0 if an...
-
-mkdir(2)        make a directory file
-...will contain the directory has been
-exhausted. EDQUOT The user's quota of
-inodes on the file system on which the
-directory is being created has been
-exhausted. EIO An I/O error occurred
-while making the directory entry or...
-\end{lstlisting}
-}
-
-{\tt \small
-\lstset{language = XML, caption={signal number to string},}
-\begin{lstlisting}
-$ apropos %\normalfont\upshape``%signal number to string%\normalfont\upshape''%
-psignal(3)      system signal messages
-...the signal number is not recognized
-sigaction(2) , the string Unknown signal
-is produced. The psiginfo function produces
-the same output as the psignal function,
-only it uses the signal number information
-from the si argument. The message strings can...
-
-intro(2)        introduction to system calls
-and error numbers
-...undefined signal to a signal(3) or kill(2)
-function). 23 ENFILE Too many open files in
-system . Maximum number...shell. Pathname A
-path name is a NUL -terminated character
-string starting with an optional slash,
-followed by zero or...
-
-dump_lfs(8)     filesystem backup
-...low estimates of the number of blocks to
-write, the number of tapes it...a string
-containing embedded formatting commands for
-strftime(3). The total formatted string
-is...in. If dump_lfs rdump_lfs receives a
-SIGINFO signal (see the status argument of
-stty...
-\end{lstlisting}
-}
-
-\begin{figure*}[htp]
-\begin{center}
-\includegraphics [scale=0.36]{/home/abhinav/development/AsiaBSDCon/spell.png}
-\caption{The spell corrector and the CGI frontend in action}
-\label{}
-\end{center}
-\end{figure*}
+{\bf Listing \ref{newUser}}, {\bf \ref{makeDirectory}}, and {\bf \ref{signal} } show results of some of the sample queries on new \textit{apropos}
+to demonstrate how it performs as compared to the traditional version.
+\endnote{Although the new \textit{apropos} by default returns 10
+results for a query but in the listings the output has been
+snipped to save space
+} \\
 
 In \textbf{Figure 1} the spell corrector can be seen in action along with the web
 interface that was developed using \textit{apropos-utils}. \\
+
 
 \section{Related Work}
 \begin{description}
@@ -791,6 +664,87 @@ classic
 \textit{apropos}, but it is still essentially a keyword lookup based
 implementation.
 \end{description}
+
+{ \small
+\lstset{language = XML, caption={Add new user}, label={newUser}}
+\begin{lstlisting}[float=*]
+$ apropos %\normalfont\upshape``%add new user%\normalfont\upshape''%
+ssh-add(1)      adds private key identities to the authentication agent...on the command line.
+If any file requires a passphrase, ssh-add asks for the passphrase from the user. The passphrase
+is read from the user's tty. ssh-add retries the last passphrase if multiple identity files are
+given...
+
+chpass(1)       add or change user database information
+add or change user database information
+
+useradd(8)      add a user to the system
+The useradd utility adds a user to the system, creating and populating a home directory if
+necessary. Any skeleton files will be provided for the new user if they exist in the skel-dir
+directory (see the k option). Default...
+.
+.
+.
+\end{lstlisting}
+}
+
+
+{\tt \small
+\lstset{language = XML, caption={make directory}, label={makeDirectory}}
+\begin{lstlisting}[float=*]
+$ apropos %\normalfont\upshape``%make directory%\normalfont\upshape''%
+make(1) maintain program dependencies
+...CURDIR A path to the directory where make was executed. Refer to the description of PWD for
+more details. MAKE The name that make was executed with argv[0]. For compatibility make also sets
+.MAKE with the same value. The...
+
+mkdir(1)        make directories
+make directories
+
+ln(1)   make links
+...a directory in which to place the link; otherwise it is placed in the current directory If
+only the directory is specified, the link will be made to the last component of source_file
+. Given more than two arguments, ln makes...
+
+mkfifo(1)       make fifos
+make fifos...of a=rw mkfifo requires write permission in the parent directory. mkfifo exits 0 if
+successful, and >0 if an...
+
+mkdir(2)        make a directory file
+...will contain the directory has been exhausted. EDQUOT The user's quota of inodes on the file
+system on which the directory is being created has been exhausted. EIO An I/O error occurred
+while making the directory entry or...
+\end{lstlisting}
+}
+
+{\tt \small
+\lstset{language = XML, caption={signal number to string}, label={signal}}
+\begin{lstlisting}[float=*]
+$ apropos %\normalfont\upshape``%signal number to string%\normalfont\upshape''%
+psignal(3)      system signal messages
+...the signal number is not recognized sigaction(2) , the string Unknown signal is produced. The
+psiginfo function produces the same output as the psignal function, only it uses the signal
+number information from the si argument. The message strings can...
+
+intro(2)        introduction to system calls and error numbers
+...undefined signal to a signal(3) or kill(2) function). 23 ENFILE Too many open files in system.
+Maximum number...shell. Pathname A path name is a NUL -terminated character string starting with
+an optional slash, followed by zero or...
+
+dump_lfs(8)     filesystem backup
+...low estimates of the number of blocks to write, the number of tapes it...a string containing
+embedded formatting commands for strftime(3). The total formatted string is...in. If dump_lfs
+rdump_lfs receives a SIGINFO signal (see the status argument of stty...
+\end{lstlisting}
+}
+
+\begin{figure*}[htp]
+\begin{center}
+\includegraphics [scale=0.36]{/home/abhinav/development/AsiaBSDCon/spell.png}
+\caption{The spell corrector and the CGI frontend in action}
+\label{}
+\end{center}
+\end{figure*}
+
 
 
 \section{Future Work}
@@ -828,7 +782,7 @@ being maintained there. Experimental work is still being done in the \textit
  apropos\_replacement}
 }
 
-
+\pagebreak
 \section{Acknowledgement}
 This project has been developed as part of \emph{Google Summer of Code 2011}
 [17], thanks to \textbf{Google} for sponsoring it. Special thanks to
@@ -991,6 +945,7 @@ http://mdocml.bsd.lv/mdoc.7.html
 
 
 \end{thebibliography}
+\theendnotes
 
 \end{document}
 
