@@ -6,10 +6,11 @@
 \usepackage{times}
 \usepackage{algorithm}% http://ctan.org/pkg/algorithm
 \usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
+\usepackage{textcomp}
 %\usepackage[pdftex]{graphicx}
 \lstset{ %
 language=sh,
-basicstyle=\footnotesize,
+basicstyle=\footnotesize\ttfamily,
 numbers=none,
 backgroundcolor=\color{white},
 showspaces=false,
@@ -20,6 +21,8 @@ tabsize=2,
 captionpos=b,
 breaklines=true,
 breakatwhitespace=false,
+upquote=true,
+escapechar=\%,
 title=\lstname
 }
 
@@ -36,7 +39,7 @@ title=\lstname
 {\rm Abhinav Upadhyay}\\
 $<$er.abhinav.upadhyay@gmail.com$>$
 \and
-{\rm Joerg Sonnenberger}\\
+{\rm J\"org Sonnenberger}\\
 $<$joerg@NetBSD.org$>$
 } % end author
 
@@ -59,7 +62,7 @@ and that is the primary reason for its simple design and limited search
 capabilities. \\
 
 This paper discusses a new implementation of \textit{apropos} done by
-Abhinav Upadhyay and mentored by Joerg Sonnenberger as part of
+Abhinav Upadhyay and mentored by J\"org Sonnenberger as part of
 Google Summer of Code 2011, for The NetBSD Foundation. The goal of this project
 was to replace the
 conventional apropos in NetBSD with a modern version which supports full text
@@ -108,16 +111,16 @@ a whole lot of options for specifying keywords in their queries. Besides this,
 they cannot search for keywords which are not usually specified in the title of
 a man page, for example a query like {\tt EINVAL} would return no results. \\
 
-{\tt \small
+{\small
 \lstset{language = XML, caption={No results for free form queries}}
 \begin{lstlisting}
-$ apropos ``add new user''
+$ apropos %\normalfont\upshape``%add new user%\normalfont\upshape''%
 add new user: nothing appropriate
 
-$ apropos ``get process status''
+$ apropos %\normalfont\upshape``%get process status%\normalfont\upshape''%
 get process status: nothing appropriate
 
-$ apropos ``termcap database''
+$ apropos %\normalfont\upshape``%termcap database%\normalfont\upshape''%
 termcap database: nothing appropriate
 \end{lstlisting}
 }
@@ -133,34 +136,35 @@ that while \textit{apropos} returns the correct result for the query
 is used in place of \textit{``directories''}, even though the two words are based
 on same root word. \\
 
-{\tt \small
+{\small
 \lstset{language = XML, caption={No support for stems or words with same root},}
 \begin{lstlisting}
-$ apropos ``make directories''
+$ apropos %\normalfont\upshape``%make directories%\normalfont\upshape"%
 mkdir (1) - make directories
 
-$ apropos ``make directory''
+$ apropos %\normalfont\upshape"%make directory%\normalfont\upshape"%
 make directory: nothing appropriate
 
-$ apropos ``upgrading package''
+$ apropos %\normalfont\upshape``%upgrading package%\normalfont\upshape''%
 pkg_add (1) - a utility for installing and
 upgrading software package distributions
 
-$ apropos ``upgrading packages''
+$ apropos %\normalfont\upshape``%upgrading packages%\normalfont\upshape''%
 upgrading packages: nothing appropriate
 \end{lstlisting}
 }
+
 
 Similarly, it is very common for users to misspell keywords in a query and \textit{apropos} has no support for it either.
 
 {\tt \small
 \lstset{language = sh, caption={No spelling correction},}
 \begin{lstlisting}
-$ apropos ``copy strings''
+$ apropos %\normalfont\upshape``%copy strings%\normalfont\upshape''%
 stpcpy, stpncpy, strcpy, strncpy (3) - copy
 strings
 
-$ apropos ``coppy strings''
+$ apropos %\normalfont\upshape``%coppy strings%\normalfont\upshape''%
 coppy strings: nothing appropriate
 \end{lstlisting}
 }
@@ -203,7 +207,8 @@ Management Controller
 Apart from the search related problems there are a few issues related to
 the way man pages are handled in NetBSD. The different aliases of the man pages
 are stored on the file system in the from of hard (or symbolic) links and these
-have to be specified in the makefiles explicitly using the MLINKS mechanism. This
+have to be specified in the makefiles explicitly using the {\tt MLINKS}
+mechanism. This
 approach works fine but it is a mess from maintenance point of view.
 It should be possible to fix this by utilizing the index already built and
 maintained by \textit{apropos}, but yet again, the simplistic implementation of
@@ -224,7 +229,7 @@ macro when used inside of the
 {\tt \small
 NAME
 }
-section holds more significance than if used inside of any other section. Similarly the description of various \textit{errno} values in the
+section holds more significance than if it is used elsewhere. Similarly the description of various \textit{errno} values in the
 \textit{intro(2)} man page has more important information than the mention of
 those \textit{errno} values in the
 {\tt \small
@@ -235,8 +240,9 @@ section of various man pages from section 3. \\
 In essence, it should be possible
 to parse and extract the structurally meaningful data
 out of man pages and index them in the form of an inverted index [4]. The index
-combined with a ranking algorithm which exploits the structured nature of the
-data to give back more relevant results to the user, can be used to build a
+can be combined with a ranking algorithm which exploits the structured nature of
+the
+data to give more relevant results to the user, and to build a
 high quality search interface for manual pages.
 Such a search tool will solve many of the problems associated with the conventional \textit{apropos(1)} as noted
 before and discussed as follows: \\
@@ -250,8 +256,8 @@ now produce relevant results.
 \end{description}
 \begin{description}
 \item[Basic Natural Language Processing Support] \hfill \\
-When parsing the man pages and building the index, it is also possible to
-pre-process the tokens extracted from the man pages to support some of the very
+When parsing the man pages and building the index, tokens are preprocessed after
+extraction from the man pages to support some of the very
 basic natural language processing functionalities. In this implementation, the
 Porter stemming algorithm [5] has been used to
 reduce the individual tokens extracted from the man pages to their root words.
@@ -266,14 +272,14 @@ spelling suggestion.
 \begin{description}
 \item[Bookkeeping of man page metadata] \hfill \\
 In this implementation, additional metadata related to the man pages, for example
-an md5 hash, the device id, inode number and modification time
-of the man page files are indexed and stored.
-This allows for very fast and hassle free update of the index as new man pages are installed or the old ones are updated. \\
+an MD5 hash, the device id, inode number and modification time
+of the man page files are kept.
+This allows fast incremental update of the index as new man pages are installed or the old ones are updated. \\
 
 Similarly a separate index of all the man page aliases is stored and maintained.
 This provides an option to get rid of all the hard or symbolic links of the man
-pages scattered throughout the filesystem, and also for clean up of the MLINKS
-mess in the makefiles.
+pages scattered throughout the filesystem, and also for clean up of the
+{\tt MLINKS} mess in the makefiles.
 \end{description}
 
 \subsection{Tools Used}
@@ -283,7 +289,7 @@ data obtained from the parsing process. These are highly specific problems, and
 solving them from scratch would be a separate project in its own right,
 therefore this project tried to avoid reinventing the wheel and used existing
 tools and libraries which are battle tested and very successful.
-\textit{libmandoc} [6] from \textit{mdocml} [18] project has been used for
+\textit{libmandoc} [6] from the \textit{mdocml} [18] project has been used for
 parsing the man pages and \textit{sqlite} [7] for indexing and storing the parsed
 data on the file system.
 
@@ -321,8 +327,8 @@ command line tool which traverses the filesystem, reads the raw man page source 
 \textit{\{dev\_t, ino\_t, mtime\}} of all the files using \textit{stat(2)}.
 A similar set of metadata is stored in the database (referring to the last successful indexing operation), \textit{makemandb} takes a difference (the set difference operation) of the two sets of metadata to obtain the list of man page files on the file system which are either newly installed (new \textit{\{dev\_t, ino\_t\}} pairs) or they have been updated (changed \textit{mtime}). \\
 
-In the second pass \textit{makemandb} generates md5 checksum of the files obtained from the previous stage and for each of these checksums, it checks in
-the db, whether this md5 checksum already exists in the db or not. If the md5 checksum is already present in the database, then this was just a false alarm and \textit{makemandb} does not need to parse the file, it simply updates the metadata of that file in the database. In case the md5 checksum of a file does not already exist in the database, then that means the file is either a newly installed man page or an older copy of a man page was updated,
+In the second pass \textit{makemandb} generates MD5 checksum of the files obtained from the previous stage and for each of these checksums, it checks in
+the db, whether this MD5 checksum already exists in the db or not. If the MD5 checksum is already present in the database, then this was just a false alarm and \textit{makemandb} does not need to parse the file, it simply updates the metadata of that file in the database. In case the MD5 checksum of a file does not already exist in the database, then that means the file is either a newly installed man page or an older copy of a man page was updated,
 \textit{makemandb} feeds such man pages to the parser and extracts interesting
 data out of them, later on storing the data in the FTS table in the database.
 \end{description}
@@ -331,9 +337,7 @@ data out of them, later on storing the data in the FTS table in the database.
 \item[Database Schema] \hfill \\
 During the initial stage of the project, the structure of the database was kept
 simple. The FTS table consisted of 3 columns:
-{\tt
-name, name\_desc, desc
-}
+{\tt name}, {\tt name\_desc}, and {\tt desc}.
 The
 {\tt
 name
@@ -362,7 +366,8 @@ project are discussed later). Better ranking schemes required storing precompute
 term weights [19] on the file system, this almost doubled the storage requirements, therefore such ranking schemes were discarded later on, and the
 database schema was decomposed further into more columns. The decomposition into
 more columns was done to represent the most commonly occurring sections in usual Unix man pages, for example
-{\tt NAME, DESCRIPTION, LIBRARY, RETURN VALUES, EXIT STATUS, ERRORS}
+{\tt NAME}, {\tt DESCRIPTION}, {\tt LIBRARY}, {\tt RETURN VALUES},
+{\tt EXIT STATUS}, {\tt ERRORS}
 etc. Such a decomposition allowed for an elaborate ranking scheme, which could
 assign different weights to each of these columns, based on their relevancy. The
 final schema of the database is shown in {\bf Listing 5}
@@ -383,7 +388,7 @@ project it has been observed that, for a query, most often than not the top 10
 results are sufficient. \\
 
 Another key aspect of any search application is to filter out or avoid stop-words
-. Words like \textit{``the'', ``a'', ``an'', ``'this''} etc. come under the
+. Words like \textit{``the'', ``a'', ``an'', ``this''} etc. come under the
 category of stop-words, these are the words which are \emph{very} commonly used
 in the
 language. Stop-words usually skew the search results because of their sheer
@@ -425,7 +430,7 @@ The Database has three tables at present:
   9. exit_status    EXIT STATUS section
   10. diagnostics   DIAGNOSTICS section
   11. errors        ERRORS section
-  12. md5_hash      An md5 hash of the
+  12. md5_hash      An MD5 hash of the
                     contents of the man
                     page (UNIQUE).
 (2) mandb_meta:
@@ -568,8 +573,8 @@ indexing the man pages and store them in a separate table. This lead to high
 quality search results but it also brought up a serious issue. Storing
 precomputed weights on the file system, more than doubled the storage
 requirements of the database index. As a concrete example, it took close
-to $90 MB$ to index about $8000$ documents. Without the precomputed weights, 
-the database size requirement was close to $45 MB$ for the same number of pages.
+to $90$ MB to index about $8000$ documents. Without the precomputed weights, 
+the database size requirement was close to $45$ MB for the same number of pages.
 \end{description}
 
 \begin{description}
@@ -650,10 +655,10 @@ to demonstrate how it performs as compared to the traditional version. \\
 %snipped to save space
 %} \\
 
-{\tt \small
+{ \small
 \lstset{language = XML, caption={Add new user},}
 \begin{lstlisting}
-$ apropos ``add new user''
+$ apropos %\normalfont\upshape``%add new user%\normalfont\upshape''%
 ssh-add(1)      adds private key identities to
 the authentication agent...on the command line.
 If any file requires a passphrase, ssh-add asks
@@ -682,7 +687,7 @@ directory (see the k option). Default...
 {\tt \small
 \lstset{language = XML, caption={make directory},}
 \begin{lstlisting}
-$ apropos ``make directory''
+$ apropos %\normalfont\upshape``%make directory%\normalfont\upshape''%
 make(1) maintain program dependencies
 ...CURDIR A path to the directory where make
 was executed. Refer to the description of PWD
@@ -720,7 +725,7 @@ while making the directory entry or...
 {\tt \small
 \lstset{language = XML, caption={signal number to string},}
 \begin{lstlisting}
-$ apropos ``signal number to string''
+$ apropos %\normalfont\upshape``%signal number to string%\normalfont\upshape''%
 psignal(3)      system signal messages
 ...the signal number is not recognized
 sigaction(2) , the string Unknown signal
