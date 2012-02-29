@@ -274,7 +274,7 @@ spelling suggestion.
 \item[Bookkeeping of man page metadata] \hfill \\
 In this implementation, additional metadata related to the man pages, for example
 an MD5 hash, the device id, inode number and modification time
-of the man page files are kept.
+of the man page files are kept in the database.
 This allows fast incremental update of the index as new man pages are installed or the old ones are updated. \\
 
 Similarly a separate index of all the man page aliases is stored and maintained.
@@ -624,16 +624,23 @@ columns of the FTS table}
 
 \pagebreak
 \section{Results}
+\subsection{Performance of apropos}
 {\bf Listing \ref{newUser}}, {\bf \ref{makeDirectory}}, and {\bf \ref{signal} } show results of some of the sample queries on new \textit{apropos}
 to demonstrate how it performs as compared to the traditional version.
 \endnote{Although the new \textit{apropos} by default returns 10
 results for a query but in the listings the output has been
 snipped to save space
-} \\
-
-In \textbf{Figure 1} the spell corrector can be seen in action along with the web
+}
+In \textbf{Figure 1}, the spell corrector can be seen in action along with the web
 interface that was developed using \textit{apropos-utils}. \\
 
+
+\subsection{Performance of makemandb} 
+On a modern desktop hardware, \textit{makemandb} takes about 25 seconds
+to index 4000 man pages, and the size of this index is $15$ MB. When 
+the number of man pages is increased to 6100 by including some packages from
+\textit{pkgsrc}, the time taken by \textit{makemandb} grows to about 50 seconds
+and the size of the database index grows to $27$ MB. \\
 
 \section{Related Work}
 \begin{description}
@@ -768,7 +775,7 @@ space currently required by \textit{apropos} database. The disk space thus
 saved might also allow for experiments with ranking algorithms which require
 storing additional metadata on the disk.
 \end{description}
-
+\pagebreak
 \section{Availability}
 The code for this project has been imported into the NetBSD source tree and
 being maintained there. Experimental work is still being done in the \textit
@@ -779,7 +786,6 @@ being maintained there. Experimental work is still being done in the \textit
  apropos\_replacement}
 }
 
-\pagebreak
 \section{Acknowledgement}
 This project has been developed as part of \emph{Google Summer of Code 2011}
 [17], thanks to \textbf{Google} for sponsoring it. Special thanks to
